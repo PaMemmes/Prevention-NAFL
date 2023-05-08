@@ -1,12 +1,12 @@
 import pandas as pd
 import numpy as np
 import xgboost as xgb
-from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 from time import time
 from collections import defaultdict
 import json
 
-from utils.utils import calc_metrics, calc_all
+from utils.utils import calc_all
 
 def train(x_train, x_test, y_train, y_test):
     params = {
@@ -21,7 +21,7 @@ def train(x_train, x_test, y_train, y_test):
         'reg_lambda':        1,
         'scale_pos_weight':  2,
         'objective':         'multi:softmax',
-        'num_class':         3,
+        'num_class':         4,
         'verbose':           True,
         'gpu_id':            0,
         'tree_method':       'gpu_hist'
@@ -34,14 +34,13 @@ def train(x_train, x_test, y_train, y_test):
     }
 
     bst = xgb.XGBClassifier(**params)
-    clf = RandomizedSearchCV(bst, hyperparameter_grid, random_state=0, n_iter=50)
+    clf = GridSearchCV(bst, hyperparameter_grid)
     
     start = time()
     model = clf.fit(x_train, y_train)
     print("GridSearchCV took %.2f seconds for %d candidate parameter settings." % (time() - start, len(clf.cv_results_["params"])) )  
-    metrics, cm, cm_norm, preds = calc_all(model.best_estimator_, x_test, y_test)
+    cm, cm_norm, preds = calc_all(model.best_estimator_, x_test, y_test)
     print(model.best_params_)
-    print('METRICS ', metrics)
-    with open('../results/results.json', 'w', encoding='utf-8') as f: 
-        json.dump(metrics, f, ensure_ascii=False, indent=4)
+    # with open('../results/results.json', 'w', encoding='utf-8') as f: 
+    #     json.dump(metrics, f, ensure_ascii=False, indent=4)
     return model.best_estimator_
