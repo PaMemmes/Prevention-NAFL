@@ -49,6 +49,7 @@ def preprocess(df):
     
     for col in cat_cols:
         x[col].fillna(x[col].mode().values[0], inplace=True)
+
     x = one_hot_encoding(x, x.columns, cardinality=4)
     cols = x.columns
     si = SimpleImputer(missing_values=np.nan, strategy="median")
@@ -58,7 +59,7 @@ def preprocess(df):
     
     x, y = remove_nan(x, y)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, stratify=y, test_size=0.15, random_state=420)
 
     scaler = MinMaxScaler()
     x_train = scaler.fit_transform(x_train)
