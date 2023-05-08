@@ -1,6 +1,6 @@
 from collections import defaultdict
 import numpy as np
-from sklearn.metrics import roc_curve, auc, precision_recall_fscore_support, confusion_matrix, accuracy_score, roc_auc_score,confusion_matrix,accuracy_score,classification_report,roc_curve
+from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.metrics import cohen_kappa_score
 from sklearn.metrics import precision_recall_fscore_support as score
