@@ -28,6 +28,7 @@ def make_cats_plots(df):
     plt.savefig("../results/categoricals.png", bbox_inches="tight")
     plt.close()
 
+
 def show_dists(df):
     plt.figure(figsize=(20.6,15))
 
@@ -60,14 +61,16 @@ def show_dists(df):
     plt.savefig("../results/categoricals.png", bbox_inches="tight")
     plt.close()
 
-    
 if __name__ == '__main__':
+
     df = pd.read_csv('../data/kaggle_cirrhosis.csv')
     ax = sns.histplot(x=df['Stage'], discrete=True, binwidth=0.4)
+    print(df)
     ax.figure.savefig("../results/stage.png", bbox_inches="tight")
     plt.close()
 
     corr = df.corr()
+    
     mask = np.triu(np.ones_like(corr, dtype=bool))
     cmap = sns.diverging_palette(230, 20, as_cmap=True)
     ax = sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
