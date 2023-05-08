@@ -10,7 +10,7 @@ def remove_nan(x, y):
     len_y = len(y)
     x = x.loc[indices_to_keep]
     y = y.loc[indices_to_keep]
-    print('Dropped rows: ', len_y - len(y))
+    print('Dropped rows (=Rows that have missing "Stage"): ', len_y - len(y))
     print('Perc dropped rows: ', 100 - (len(y) / len_y * 100))
     return x, y
 
@@ -24,7 +24,7 @@ def one_hot_encoding(df, cols, cardinality):
     oh_encoder = OneHotEncoder(handle_unknown='ignore', sparse=False)
     oh_df = pd.DataFrame(oh_encoder.fit_transform(df[low_cardinality_cols]))
     oh_df.index = df.index
-
+    oh_df.columns = oh_encoder.get_feature_names_out()
     df = df.drop(low_cardinality_cols, axis=1)
     df = pd.concat([df, oh_df], axis=1)
 
@@ -49,17 +49,16 @@ def preprocess(df):
     
     for col in cat_cols:
         x[col].fillna(x[col].mode().values[0], inplace=True)
-
-    print(x)
-    x = one_hot_encoding(x, x.columns, 3)
-
+    x = one_hot_encoding(x, x.columns, cardinality=4)
+    cols = x.columns
     si = SimpleImputer(missing_values=np.nan, strategy="median")
-    x=pd.DataFrame(si.fit_transform(x[x._get_numeric_data().columns]))
+    x = pd.DataFrame(si.fit_transform(x[x._get_numeric_data().columns]), columns=x.columns)
 
     y = pd.DataFrame(y, columns=['Stage'])
+    
     x, y = remove_nan(x, y)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.1)
 
     scaler = MinMaxScaler()
     x_train = scaler.fit_transform(x_train)
