@@ -24,17 +24,19 @@ def train(x_train, x_test, y_train, y_test):
         'num_class':         4,
         'verbose':           True,
         'gpu_id':            0,
-        'tree_method':       'gpu_hist'
+        'tree_method':       'exact'
     }
 
     hyperparameter_grid = {
         'max_depth': [3, 6, 9],
         'learning_rate': [0.05, 0.1, 0.20],
-        'max_leaves': [2**4, 2**6, 2**8]
+        'max_leaves': [2**4, 2**6, 2**8],
+        'eta': [x for x in np.linspace(0.1, 0.6, 6)],
+        'gamma': [int(x) for x in np.linspace(0, 0.5, 6)]
     }
 
     bst = xgb.XGBClassifier(**params)
-    clf = GridSearchCV(bst, hyperparameter_grid)
+    clf = RandomizedSearchCV(bst, hyperparameter_grid, n_iter=80)
     
     start = time()
     model = clf.fit(x_train, y_train)
