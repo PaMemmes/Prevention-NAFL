@@ -7,6 +7,7 @@ from collections import defaultdict
 import json
 
 from utils.utils import calc_all
+from utils.plots import plot_confusion_matrix
 
 def train(x_train, x_test, y_train, y_test):
     params = {
@@ -42,6 +43,8 @@ def train(x_train, x_test, y_train, y_test):
     model = clf.fit(x_train, y_train)
     print("GridSearchCV took %.2f seconds for %d candidate parameter settings." % (time() - start, len(clf.cv_results_["params"])) )  
     cm, cm_norm, preds = calc_all(model.best_estimator_, x_test, y_test)
+    plot_confusion_matrix(cm, name='cm')
+
     print(model.best_params_)
     # with open('../results/results.json', 'w', encoding='utf-8') as f: 
     #     json.dump(metrics, f, ensure_ascii=False, indent=4)
