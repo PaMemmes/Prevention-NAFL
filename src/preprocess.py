@@ -3,8 +3,7 @@ import pandas as pd
 from ydata_profiling import ProfileReport
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
-
-from utils.utils import remove_nan, one_hot_encoding, get_categoricals
+from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals
 
 def preprocess(df):
     df = df.drop('ID', axis=1)
@@ -26,13 +25,9 @@ def preprocess(df):
 
     y = pd.DataFrame(y, columns=['Stage'])
     
-    x, y = remove_nan(x, y)
+    x, y = remove_y_nans(x, y)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, stratify=y, test_size=0.15, random_state=42)
-
-    # scaler = MinMaxScaler()
-    # x_train = scaler.fit_transform(x_train)
-    # x_test = scaler.transform(x_test)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, stratify=y, test_size=0.15, random_state=20)
 
     return x_train, x_test, y_train.astype(int), y_test.astype(int), x.columns
 
