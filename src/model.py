@@ -9,23 +9,24 @@ import json
 from utils.utils import calc_all
 from utils.plots import plot_confusion_matrix
 
+
 def train(x_train, x_test, y_train, y_test):
     params = {
-        'num_rounds':        10,
-        'max_depth':         8,
-        'max_leaves':        2**8,
-        'alpha':             0.9,
-        'eta':               0.1,
-        'gamma':             0.1,
-        'learning_rate':     0.1,
-        'subsample':         1,
-        'reg_lambda':        1,
-        'scale_pos_weight':  2,
-        'objective':         'multi:softmax',
-        'num_class':         4,
-        'verbose':           True,
-        'gpu_id':            0,
-        'tree_method':       'exact'
+        'num_rounds': 10,
+        'max_depth': 8,
+        'max_leaves': 2**8,
+        'alpha': 0.9,
+        'eta': 0.1,
+        'gamma': 0.1,
+        'learning_rate': 0.1,
+        'subsample': 1,
+        'reg_lambda': 1,
+        'scale_pos_weight': 2,
+        'objective': 'multi:softmax',
+        'num_class': 4,
+        'verbose': True,
+        'gpu_id': 0,
+        'tree_method': 'exact'
     }
 
     hyperparameter_grid = {
@@ -38,14 +39,15 @@ def train(x_train, x_test, y_train, y_test):
 
     bst = xgb.XGBClassifier(**params)
     clf = RandomizedSearchCV(bst, hyperparameter_grid, n_iter=80)
-    
+
     start = time()
     model = clf.fit(x_train, y_train)
-    print("GridSearchCV took %.2f seconds for %d candidate parameter settings." % (time() - start, len(clf.cv_results_["params"])) )  
+    print("GridSearchCV took %.2f seconds for %d candidate parameter settings." % (
+        time() - start, len(clf.cv_results_["params"])))
     cm, cm_norm, preds = calc_all(model.best_estimator_, x_test, y_test)
     plot_confusion_matrix(cm, name='cm')
 
     print(model.best_params_)
-    # with open('../results/results.json', 'w', encoding='utf-8') as f: 
+    # with open('../results/results.json', 'w', encoding='utf-8') as f:
     #     json.dump(metrics, f, ensure_ascii=False, indent=4)
     return model.best_estimator_

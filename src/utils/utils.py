@@ -10,9 +10,8 @@ from sklearn.metrics import precision_recall_fscore_support as score
 from sklearn.metrics import classification_report
 
 
-
 def calc_all(model, x_test, y_test):
-    
+
     preds = model.predict(x_test)
     accuracy = accuracy_score(y_test, preds)
     cm = confusion_matrix(y_test, preds)
@@ -28,6 +27,7 @@ def calc_all(model, x_test, y_test):
     print('Cohen kappa', cohen_kappa)
     return cm, cm_norm, preds
 
+
 def remove_y_nans(x, y):
     indices_to_keep = ~y.isin([np.nan, np.inf, -np.inf]).any(axis=1)
     len_y = len(y)
@@ -37,13 +37,16 @@ def remove_y_nans(x, y):
     print('Perc dropped rows: ', 100 - (len(y) / len_y * 100))
     return x, y
 
+
 def factorize(df, cols):
     for col in cols:
         df[col] = pd.factorize(df[col])[0] + 1
     return df
 
+
 def one_hot_encoding(df, cols, cardinality):
-    low_cardinality_cols = [col for col in cols if df[col].nunique() <= cardinality]
+    low_cardinality_cols = [
+        col for col in cols if df[col].nunique() <= cardinality]
     oh_encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
     oh_df = pd.DataFrame(oh_encoder.fit_transform(df[low_cardinality_cols]))
     oh_df.index = df.index
@@ -54,8 +57,9 @@ def one_hot_encoding(df, cols, cardinality):
     df.columns = df.columns.astype(str)
     return df
 
+
 def get_categoricals(df):
     num_cols = df._get_numeric_data().columns
-    
+
     cats = list(set(df.columns) - set(num_cols))
     return cats
