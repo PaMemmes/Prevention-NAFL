@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from ydata_profiling import ProfileReport
 
 
 def make_cats_plots(df):
@@ -71,7 +72,9 @@ if __name__ == '__main__':
 
     df = pd.read_csv('../data/kaggle_cirrhosis.csv')
     ax = sns.histplot(x=df['Stage'], discrete=True, binwidth=0.4)
-    print(df)
+    data_profile = ProfileReport(df)
+    data_profile.to_file(f'../results/data.html')
+
     ax.figure.savefig("../results/stage.png", bbox_inches="tight")
     plt.close()
 
