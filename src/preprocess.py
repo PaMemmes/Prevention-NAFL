@@ -1,15 +1,12 @@
 import numpy as np
 import pandas as pd
-from ydata_profiling import ProfileReport
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals
 
 
-def preprocess(df):
+def preprocess(df, nn=False):
     df = df.drop('ID', axis=1)
-    # data_profile = ProfileReport(df)
-    # data_profile.to_file(f'../results/data.html')
     df['Age'] = df['Age'] / 365
     y = df['Stage'] - 1
     x = df.drop('Stage', axis=1)
@@ -31,5 +28,9 @@ def preprocess(df):
 
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, stratify=y, test_size=0.15, random_state=20)
-
+    if nn == True:
+        x_train, x_val, y_train, y_val = train_test_split(
+            x, y, stratify=y, test_size=0.15, random_state=20)
+        # val is 0.85*0.15 = 0.1270
+        return x_train, x_val, x_val, y_train.astype(int), y_val.astype(int), y_test.astype(int)
     return x_train, x_test, y_train.astype(int), y_test.astype(int), x.columns
