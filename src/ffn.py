@@ -25,12 +25,16 @@ from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
 
-def objective(trial) -> float:    
+
+def objective(trial) -> float:
     n_layers = trial.suggest_int('n_layers', 1, 6)
     dropout = trial.suggest_float('dropout', 0.1, 0.5)
     output_dims = [
-        trial.suggest_int('n_units_l{}'.format(i), 4, 128, log=True) for i in range(n_layers)
-    ]
+        trial.suggest_int(
+            'n_units_l{}'.format(i),
+            4,
+            128,
+            log=True) for i in range(n_layers)]
 
     model = NeuralNetwork(21, dropout, output_dims)
     datamodule = DataModule(batch_size=BATCH_SIZE)
@@ -46,12 +50,16 @@ def objective(trial) -> float:
     trainer.fit(model, datamodule=datamodule)
     return trainer.callback_metrics['val_acc'].item()
 
-def retrain_objective(trial) -> float:    
+
+def retrain_objective(trial) -> float:
     n_layers = trial.suggest_int('n_layers', 1, 3)
     dropout = trial.suggest_float('dropout', 0.2, 0.5)
     output_dims = [
-        trial.suggest_int('n_units_l{}'.format(i), 4, 128, log=True) for i in range(n_layers)
-    ]
+        trial.suggest_int(
+            'n_units_l{}'.format(i),
+            4,
+            128,
+            log=True) for i in range(n_layers)]
 
     model = NeuralNetwork(21, dropout, output_dims)
     datamodule = DataModule(batch_size=16)
@@ -68,17 +76,19 @@ def retrain_objective(trial) -> float:
     trainer.test(datamodule=datamodule)
     return trainer.callback_metrics['test_acc'].item()
 
+
 class KaggleDataSet(Dataset):
     def __init__(self, x, y) -> None:
         x, y = x.values, y.values
         self.x = torch.tensor(x, dtype=torch.float32, requires_grad=True)
-        self.y = torch.tensor(y,dtype=torch.long)
+        self.y = torch.tensor(y, dtype=torch.long)
 
     def __len__(self) -> int:
         return len(self.y)
 
     def __getitem__(self, idx) -> tuple[torch.tensor, torch.tensor]:
         return self.x[idx], self.y[idx]
+
 
 class DataModule(pl.LightningModule):
     def __init__(self, batch_size) -> None:
@@ -87,7 +97,8 @@ class DataModule(pl.LightningModule):
 
     def setup(self, stage: Optional[str] = None) -> None:
         df = pd.read_csv('../data/kaggle_cirrhosis.csv')
-        x_train, x_val, x_test, y_train, y_val, y_test = preprocess(df, nn=True)
+        x_train, x_val, x_test, y_train, y_val, y_test = preprocess(
+            df, nn=True)
 
         self.train_set = KaggleDataSet(x_train, y_train)
         self.val_set = KaggleDataSet(x_val, y_val)
@@ -102,8 +113,10 @@ class DataModule(pl.LightningModule):
     def test_dataloader(self) -> DataLoader:
         return DataLoader(self.test_set, batch_size=self.batch_size)
 
+
 class Net(nn.Module):
-    def __init__(self, input_dim, dropout: float, output_dims: List[int]) -> None:
+    def __init__(self, input_dim, dropout: float,
+                 output_dims: List[int]) -> None:
         super().__init__()
         layers: List[nn.Module] = []
 
@@ -122,6 +135,7 @@ class Net(nn.Module):
         logits = self.layers(data)
 
         return F.log_softmax(logits, dim=1)
+
 
 class NeuralNetwork(pl.LightningModule):
     def __init__(self, input_dim, dropout, output_dims) -> None:
@@ -163,7 +177,9 @@ class NeuralNetwork(pl.LightningModule):
         test_loss = F.nll_loss(x, y)
         accuracy = MulticlassAccuracy(num_classes=4)
         accuracy = accuracy(x, y)
-        self.log_dict({'test_loss': test_loss, 'test_acc': accuracy}, prog_bar=True)
+        self.log_dict(
+            {'test_loss': test_loss, 'test_acc': accuracy}, prog_bar=True)
+
 
 if __name__ == '__main__':
 

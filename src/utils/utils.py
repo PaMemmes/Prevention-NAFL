@@ -29,13 +29,21 @@ def calc_all(model, x_test, y_test) -> list[np.array, np.array, np.array]:
     print('Cohen kappa', cohen_kappa)
     return cm, cm_norm, preds
 
+
 def mice(data, m) -> pd.DataFrame:
     imp_dfs = []
     for i in range(m):
-        mice = IterativeImputer(missing_values=np.nan, random_state=i, sample_posterior=True)
-        imp_dfs.append(pd.DataFrame(mice.fit_transform(data), columns=data.columns))
+        mice = IterativeImputer(
+            missing_values=np.nan,
+            random_state=i,
+            sample_posterior=True)
+        imp_dfs.append(
+            pd.DataFrame(
+                mice.fit_transform(data),
+                columns=data.columns))
     x = reduce(lambda x, y: x.add(y), imp_dfs) / len(imp_dfs)
     return x
+
 
 def remove_y_nans(x, y) -> tuple[pd.DataFrame, pd.DataFrame]:
     indices_to_keep = ~y.isin([np.nan, np.inf, -np.inf]).any(axis=1)
