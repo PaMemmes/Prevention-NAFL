@@ -1,4 +1,4 @@
-
+from functools import reduce
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -17,8 +17,7 @@ def preprocess(df, nn=False):
         x[col].fillna(x[col].mode().values[0], inplace=True)
 
     x = one_hot_encoding(x, x.columns, cardinality=4)
-    cols = x.columns
-    x = mice(x, 5)
+    x = mice(x, 50)
     y = pd.DataFrame(y, columns=['Stage'])
 
     x, y = remove_y_nans(x, y)

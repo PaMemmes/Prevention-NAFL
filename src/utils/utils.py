@@ -31,7 +31,7 @@ def calc_all(model, x_test, y_test):
 
 def mice(data, m):
     imp_dfs = []
-    for i in range(5):
+    for i in range(m):
         mice = IterativeImputer(missing_values=np.nan, random_state=i, sample_posterior=True)
         imp_dfs.append(pd.DataFrame(mice.fit_transform(data), columns=data.columns))
     x = reduce(lambda x, y: x.add(y), imp_dfs) / len(imp_dfs)
