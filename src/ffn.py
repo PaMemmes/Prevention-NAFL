@@ -24,8 +24,8 @@ from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals
 
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
-
-
+EPOCHS = 100
+TRIALS = 50
 def objective(trial) -> float:
     n_layers = trial.suggest_int('n_layers', 1, 6)
     dropout = trial.suggest_float('dropout', 0.1, 0.5)
@@ -42,7 +42,7 @@ def objective(trial) -> float:
     trainer = pl.Trainer(
         logger=True,
         enable_checkpointing=True,
-        max_epochs=100,
+        max_epochs=EPOCHS,
         accelerator='auto',
         log_every_n_steps=10,
         callbacks=PyTorchLightningPruningCallback(trial, monitor='train_loss')
@@ -62,18 +62,20 @@ def retrain_objective(trial) -> float:
             log=True) for i in range(n_layers)]
 
     model = NeuralNetwork(21, dropout, output_dims)
-    datamodule = DataModule(batch_size=16)
+    datamodule = DataModule(batch_size=BATCH_SIZE)
 
     trainer = pl.Trainer(
         logger=True,
         enable_checkpointing=True,
-        max_epochs=100,
+        max_epochs=EPOCHS,
         accelerator='auto',
         log_every_n_steps=10,
         callbacks=PyTorchLightningPruningCallback(trial, monitor='train_loss')
     )
     trainer.fit(model, datamodule=datamodule)
     trainer.test(datamodule=datamodule)
+    preds = trainer.predict(datamodule=datamodule)
+    print(preds.shape)
     return trainer.callback_metrics['test_acc'].item()
 
 
@@ -113,6 +115,8 @@ class DataModule(pl.LightningModule):
     def test_dataloader(self) -> DataLoader:
         return DataLoader(self.test_set, batch_size=self.batch_size)
 
+    def predict_dataloader(self):
+        return DataLoader(self.test_set, batch_size=self.batch_size)
 
 class Net(nn.Module):
     def __init__(self, input_dim, dropout: float,
@@ -141,14 +145,14 @@ class NeuralNetwork(pl.LightningModule):
     def __init__(self, input_dim, dropout, output_dims) -> None:
         super().__init__()
         self.model = Net(input_dim, dropout, output_dims)
+        self.save_hyperparameters()
+
 
     def forward(self, x) -> torch.Tensor:
         return self.model(x)
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
-        print('OPTIM \n\n\n\n\n')
-        print(type(optimizer))
         return optimizer
 
     def training_step(self, batch, batch_idx) -> float:
@@ -174,18 +178,23 @@ class NeuralNetwork(pl.LightningModule):
         x, y = batch
         y = y.squeeze(1)
         x = self.forward(x)
+        print(x)
         test_loss = F.nll_loss(x, y)
         accuracy = MulticlassAccuracy(num_classes=4)
         accuracy = accuracy(x, y)
         self.log_dict(
             {'test_loss': test_loss, 'test_acc': accuracy}, prog_bar=True)
 
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
+        x, y = batch
+        y = y.squeeze(1)
+        y_hat = self.model(x)
+        return y_hat
 
 if __name__ == '__main__':
 
-    pruner = optuna.pruners.MedianPruner()
-    study = optuna.create_study(direction='maximize', pruner=pruner)
-    study.optimize(objective, n_trials=100, timeout=600)
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=TRIALS)
 
     print('Number of finished trials: {}'.format(len(study.trials)))
 
