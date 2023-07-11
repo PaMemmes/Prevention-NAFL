@@ -2,6 +2,7 @@ from functools import reduce
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, mice
 
 
@@ -33,6 +34,12 @@ def preprocess(df,
         x_train, x_val, y_train, y_val = train_test_split(
             x, y, stratify=y, test_size=0.15, random_state=20)
         # val is 0.85*0.15 = 0.1270
+
+        scaler = MinMaxScaler()
+        x_train = pd.DataFrame(scaler.fit_transform(x_train))
+        x_val = pd.DataFrame(scaler.transform(x_val))
+        x_test = pd.DataFrame(scaler.transform(x_test))
+
         return x_train, x_val, x_val, y_train.astype(
             int), y_val.astype(int), y_test.astype(int)
 
