@@ -1,8 +1,8 @@
+
 import numpy as np
 import pandas as pd
-from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
-from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals
+from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, mice
 
 
 def preprocess(df, nn=False):
@@ -18,10 +18,7 @@ def preprocess(df, nn=False):
 
     x = one_hot_encoding(x, x.columns, cardinality=4)
     cols = x.columns
-    si = SimpleImputer(missing_values=np.nan, strategy="median")
-    x = pd.DataFrame(si.fit_transform(
-        x[x._get_numeric_data().columns]), columns=x.columns)
-
+    x = mice(x, 5)
     y = pd.DataFrame(y, columns=['Stage'])
 
     x, y = remove_y_nans(x, y)

@@ -1,8 +1,10 @@
 from collections import defaultdict
+from functools import reduce
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
-
+from sklearn.experimental import enable_iterative_imputer
+from sklearn.impute import IterativeImputer
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.metrics import cohen_kappa_score
@@ -27,6 +29,13 @@ def calc_all(model, x_test, y_test):
     print('Cohen kappa', cohen_kappa)
     return cm, cm_norm, preds
 
+def mice(data, m):
+    imp_dfs = []
+    for i in range(5):
+        mice = IterativeImputer(missing_values=np.nan, random_state=i, sample_posterior=True)
+        imp_dfs.append(pd.DataFrame(mice.fit_transform(data), columns=data.columns))
+    x = reduce(lambda x, y: x.add(y), imp_dfs) / len(imp_dfs)
+    return x
 
 def remove_y_nans(x, y):
     indices_to_keep = ~y.isin([np.nan, np.inf, -np.inf]).any(axis=1)
