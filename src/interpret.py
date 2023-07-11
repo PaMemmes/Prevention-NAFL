@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def interpret_tree(model, train, test, df_cols):
+def interpret_tree(model, train, test, df_cols) -> None:
     print('Starting interpreting...')
 
     test_df = pd.DataFrame(test, columns=df_cols)

@@ -12,7 +12,7 @@ from sklearn.metrics import precision_recall_fscore_support as score
 from sklearn.metrics import classification_report
 
 
-def calc_all(model, x_test, y_test):
+def calc_all(model, x_test, y_test) -> list[np.array, np.array, np.array]:
 
     preds = model.predict(x_test)
     accuracy = accuracy_score(y_test, preds)
@@ -29,7 +29,7 @@ def calc_all(model, x_test, y_test):
     print('Cohen kappa', cohen_kappa)
     return cm, cm_norm, preds
 
-def mice(data, m):
+def mice(data, m) -> pd.DataFrame:
     imp_dfs = []
     for i in range(m):
         mice = IterativeImputer(missing_values=np.nan, random_state=i, sample_posterior=True)
@@ -37,7 +37,7 @@ def mice(data, m):
     x = reduce(lambda x, y: x.add(y), imp_dfs) / len(imp_dfs)
     return x
 
-def remove_y_nans(x, y):
+def remove_y_nans(x, y) -> tuple[pd.DataFrame, pd.DataFrame]:
     indices_to_keep = ~y.isin([np.nan, np.inf, -np.inf]).any(axis=1)
     len_y = len(y)
     x = x.loc[indices_to_keep]
@@ -47,13 +47,13 @@ def remove_y_nans(x, y):
     return x, y
 
 
-def factorize(df, cols):
+def factorize(df, cols) -> pd.DataFrame:
     for col in cols:
         df[col] = pd.factorize(df[col])[0] + 1
     return df
 
 
-def one_hot_encoding(df, cols, cardinality):
+def one_hot_encoding(df, cols, cardinality) -> pd.DataFrame:
     low_cardinality_cols = [
         col for col in cols if df[col].nunique() <= cardinality]
     oh_encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
@@ -67,7 +67,7 @@ def one_hot_encoding(df, cols, cardinality):
     return df
 
 
-def get_categoricals(df):
+def get_categoricals(df) -> list:
     num_cols = df._get_numeric_data().columns
 
     cats = list(set(df.columns) - set(num_cols))

@@ -25,7 +25,7 @@ from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
 
-def objective(trial):    
+def objective(trial) -> float:    
     n_layers = trial.suggest_int('n_layers', 1, 6)
     dropout = trial.suggest_float('dropout', 0.1, 0.5)
     output_dims = [
@@ -46,7 +46,7 @@ def objective(trial):
     trainer.fit(model, datamodule=datamodule)
     return trainer.callback_metrics['val_acc'].item()
 
-def retrain_objective(trial):    
+def retrain_objective(trial) -> float:    
     n_layers = trial.suggest_int('n_layers', 1, 3)
     dropout = trial.suggest_float('dropout', 0.2, 0.5)
     output_dims = [
@@ -69,19 +69,19 @@ def retrain_objective(trial):
     return trainer.callback_metrics['test_acc'].item()
 
 class KaggleDataSet(Dataset):
-    def __init__(self, x, y):
+    def __init__(self, x, y) -> None:
         x, y = x.values, y.values
         self.x = torch.tensor(x, dtype=torch.float32, requires_grad=True)
         self.y = torch.tensor(y,dtype=torch.long)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.y)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> tuple[torch.tensor, torch.tensor]:
         return self.x[idx], self.y[idx]
 
 class DataModule(pl.LightningModule):
-    def __init__(self, batch_size):
+    def __init__(self, batch_size) -> None:
         super().__init__()
         self.batch_size = batch_size
 
@@ -124,18 +124,20 @@ class Net(nn.Module):
         return F.log_softmax(logits, dim=1)
 
 class NeuralNetwork(pl.LightningModule):
-    def __init__(self, input_dim, dropout, output_dims):
+    def __init__(self, input_dim, dropout, output_dims) -> None:
         super().__init__()
         self.model = Net(input_dim, dropout, output_dims)
 
-    def forward(self, x):
+    def forward(self, x) -> torch.Tensor:
         return self.model(x)
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
+        print('OPTIM \n\n\n\n\n')
+        print(type(optimizer))
         return optimizer
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx) -> float:
         x, y = batch
         y = y.squeeze(1)
         x = self(x)
@@ -143,7 +145,7 @@ class NeuralNetwork(pl.LightningModule):
         self.log('train_loss', train_loss, prog_bar=True)
         return train_loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx) -> None:
         x, y = batch
         y = y.squeeze(1)
         x = self(x)
@@ -154,7 +156,7 @@ class NeuralNetwork(pl.LightningModule):
         self.log('val_acc', val_acc)
         self.log('hp_metric', val_acc, on_step=False, on_epoch=True)
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self, batch, batch_idx) -> None:
         x, y = batch
         y = y.squeeze(1)
         x = self.forward(x)
@@ -183,8 +185,3 @@ if __name__ == '__main__':
     fig = optuna.visualization.plot_optimization_history(study)
     fig.show()
     retrain_objective(study.best_trial)
-
-    # neural_network = NeuralNetwork(x_train.shape[1])
-    # trainer = pl.Trainer(log_every_n_steps= 10, logger=tb_logger, callbacks=[EarlyStopping(monitor='val_loss', mode='min')])
-    # trainer.fit(model=neural_network, train_dataloaders=train_loader, val_dataloaders=val_loader)
-    # trainer.test(model=neural_network, dataloaders=test_loader)

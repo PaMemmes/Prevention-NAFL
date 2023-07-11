@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, mice
 
 
-def preprocess(df, nn=False):
+def preprocess(df, nn=False) -> list[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Index]:
     df = df.drop('ID', axis=1)
     df['Age'] = df['Age'] / 365
     y = df['Stage'] - 1
@@ -29,4 +29,5 @@ def preprocess(df, nn=False):
             x, y, stratify=y, test_size=0.15, random_state=20)
         # val is 0.85*0.15 = 0.1270
         return x_train, x_val, x_val, y_train.astype(int), y_val.astype(int), y_test.astype(int)
+
     return x_train, x_test, y_train.astype(int), y_test.astype(int), x.columns
