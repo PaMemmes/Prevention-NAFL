@@ -25,11 +25,11 @@ from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, calc_
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
 EPOCHS = 40
-TRIALS = 2
+TRIALS = 60
 
 
 def objective(trial) -> float:
-    n_layers = trial.suggest_int('n_layers', 1, 6)
+    n_layers = trial.suggest_int('n_layers', 1, 9)
     dropout = trial.suggest_float('dropout', 0.1, 0.5)
     lr = trial.suggest_float('learning_rate', 1e-5, 1e-2)
     output_dims = [
@@ -39,7 +39,7 @@ def objective(trial) -> float:
             128,
             log=True) for i in range(n_layers)]
 
-    model = NeuralNetwork(21, dropout, output_dims)
+    model = NeuralNetwork(21, lr, dropout, output_dims)
     datamodule = DataModule(batch_size=BATCH_SIZE)
     hp_logger = TensorBoardLogger(save_dir='logs_hp')
     trainer = pl.Trainer(
@@ -56,8 +56,9 @@ def objective(trial) -> float:
 
 
 def retrain_objective(trial) -> float:
-    n_layers = trial.suggest_int('n_layers', 1, 3)
+    n_layers = trial.suggest_int('n_layers', 1, 9)
     dropout = trial.suggest_float('dropout', 0.2, 0.5)
+    lr = trial.suggest_float('learning_rate', 1e-5, 1e-2)
     output_dims = [
         trial.suggest_int(
             'n_units_l{}'.format(i),
@@ -65,7 +66,11 @@ def retrain_objective(trial) -> float:
             128,
             log=True) for i in range(n_layers)]
 
-    model = NeuralNetwork(21, dropout, output_dims)
+    model = NeuralNetwork(21, lr, dropout, output_dims)
+    print(n_layers)
+    print(dropout)
+    print(lr)
+    print(output_dims)
     datamodule = DataModule(batch_size=BATCH_SIZE)
     retrain_logger = TensorBoardLogger(save_dir='logs')
     trainer = pl.Trainer(
@@ -152,16 +157,17 @@ class Net(nn.Module):
 
 
 class NeuralNetwork(pl.LightningModule):
-    def __init__(self, input_dim, dropout, output_dims) -> None:
+    def __init__(self, input_dim, lr, dropout, output_dims) -> None:
         super().__init__()
         self.model = Net(input_dim, dropout, output_dims)
+        self.lr = lr
         self.save_hyperparameters()
 
     def forward(self, x) -> torch.Tensor:
         return self.model(x)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.model.parameters(), lr=1e-3)
+        optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
         return optimizer
 
     def training_step(self, batch, batch_idx) -> float:
