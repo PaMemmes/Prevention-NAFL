@@ -114,23 +114,34 @@ class DataModule(pl.LightningModule):
         self.train_set = KaggleDataSet(x_train, y_train)
         self.val_set = KaggleDataSet(x_val, y_val)
         self.test_set = KaggleDataSet(x_test, y_test)
-        
+
         print('Length of Train Set: ', len(self.train_set))
         print('Length of Val Set: ', len(self.val_set))
         print('Length of Test Set: ', len(self.test_set))
-                
 
     def train_dataloader(self) -> DataLoader:
-        return DataLoader(self.train_set, batch_size=self.batch_size, num_workers=16)
+        return DataLoader(
+            self.train_set,
+            batch_size=self.batch_size,
+            num_workers=16)
 
     def val_dataloader(self) -> DataLoader:
-        return DataLoader(self.val_set, batch_size=self.batch_size, num_workers=16)
+        return DataLoader(
+            self.val_set,
+            batch_size=self.batch_size,
+            num_workers=16)
 
     def test_dataloader(self) -> DataLoader:
-        return DataLoader(self.test_set, batch_size=self.batch_size, num_workers=16)
+        return DataLoader(
+            self.test_set,
+            batch_size=self.batch_size,
+            num_workers=16)
 
     def predict_dataloader(self):
-        return DataLoader(self.test_set, batch_size=self.batch_size, num_workers=16)
+        return DataLoader(
+            self.test_set,
+            batch_size=self.batch_size,
+            num_workers=16)
 
 
 class Net(nn.Module):
