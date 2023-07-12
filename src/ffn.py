@@ -24,7 +24,7 @@ from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, calc_
 
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
-EPOCHS = 4
+EPOCHS = 40
 TRIALS = 2
 
 
@@ -174,6 +174,7 @@ class NeuralNetwork(pl.LightningModule):
         train_acc = train_acc(preds, y)
         self.log('train_loss', train_loss)
         self.log('train_acc', train_acc)
+        self.log('step', self.current_epoch)
         return train_loss
 
     def validation_step(self, batch, batch_idx) -> None:
@@ -186,6 +187,7 @@ class NeuralNetwork(pl.LightningModule):
         val_acc = val_acc(x, y)
         self.log('val_loss', val_loss)
         self.log('val_acc', val_acc)
+        self.log('step', self.current_epoch)
 
     def test_step(self, batch, batch_idx) -> None:
         x, y = batch
@@ -196,6 +198,7 @@ class NeuralNetwork(pl.LightningModule):
         accuracy = MulticlassAccuracy(num_classes=4)
         accuracy = accuracy(preds, y)
         self.log_dict({'test_loss': test_loss, 'test_acc': accuracy})
+        self.log('step', self.current_epoch)
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         x, y = batch
