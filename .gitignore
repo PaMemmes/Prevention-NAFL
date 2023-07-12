@@ -130,5 +130,6 @@ dmypy.json
 
 results/
 
-src/lightning_logs/*
-src/logs/*
+src/logs_hp/
+src/lightning_logs/
+src/logs/
