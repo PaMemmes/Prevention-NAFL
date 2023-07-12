@@ -109,7 +109,7 @@ class DataModule(pl.LightningModule):
         self.train_set = KaggleDataSet(x_train, y_train)
         self.val_set = KaggleDataSet(x_val, y_val)
         self.test_set = KaggleDataSet(x_test, y_test)
-
+        
         print('Length of Train Set: ', len(self.train_set))
         print('Length of Val Set: ', len(self.val_set))
         print('Length of Test Set: ', len(self.test_set))
