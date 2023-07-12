@@ -24,13 +24,14 @@ from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, calc_
 
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
-EPOCHS = 40
-TRIALS = 50
+EPOCHS = 4
+TRIALS = 2
 
 
 def objective(trial) -> float:
     n_layers = trial.suggest_int('n_layers', 1, 6)
     dropout = trial.suggest_float('dropout', 0.1, 0.5)
+    lr = trial.suggest_float('learning_rate', 1e-5, 1e-2)
     output_dims = [
         trial.suggest_int(
             'n_units_l{}'.format(i),
@@ -40,9 +41,9 @@ def objective(trial) -> float:
 
     model = NeuralNetwork(21, dropout, output_dims)
     datamodule = DataModule(batch_size=BATCH_SIZE)
-
+    hp_logger = TensorBoardLogger(save_dir='logs_hp')
     trainer = pl.Trainer(
-        logger=TensorBoardLogger(save_dir='logs'),
+        logger=hp_logger,
         enable_checkpointing=True,
         max_epochs=EPOCHS,
         accelerator='auto',
@@ -50,6 +51,7 @@ def objective(trial) -> float:
         callbacks=PyTorchLightningPruningCallback(trial, monitor='train_loss')
     )
     trainer.fit(model, datamodule=datamodule)
+    hp_logger.finalize('success')
     return trainer.callback_metrics['val_acc'].item()
 
 
@@ -65,9 +67,9 @@ def retrain_objective(trial) -> float:
 
     model = NeuralNetwork(21, dropout, output_dims)
     datamodule = DataModule(batch_size=BATCH_SIZE)
-
+    retrain_logger = TensorBoardLogger(save_dir='logs')
     trainer = pl.Trainer(
-        logger=TensorBoardLogger(save_dir='logs'),
+        logger=retrain_logger,
         enable_checkpointing=True,
         max_epochs=EPOCHS,
         accelerator='auto',
@@ -75,15 +77,16 @@ def retrain_objective(trial) -> float:
         callbacks=PyTorchLightningPruningCallback(trial, monitor='train_loss')
     )
     trainer.fit(model, datamodule=datamodule)
-    preds = trainer.predict(datamodule=datamodule)
-    trainer.test(datamodule=datamodule)
+    preds = trainer.predict(model, datamodule=datamodule, ckpt_path='best')
+    trainer.test(model, datamodule=datamodule, ckpt_path='best')
+    retrain_logger.finalize('success')
     return trainer.callback_metrics['test_acc'].item()
 
 
 class KaggleDataSet(Dataset):
     def __init__(self, x, y) -> None:
         x, y = x.values, y.values
-        self.x = torch.tensor(x, dtype=torch.float32, requires_grad=True)
+        self.x = torch.tensor(x, dtype=torch.float32)
         self.y = torch.tensor(y, dtype=torch.long)
 
     def __len__(self) -> int:
@@ -107,17 +110,22 @@ class DataModule(pl.LightningModule):
         self.val_set = KaggleDataSet(x_val, y_val)
         self.test_set = KaggleDataSet(x_test, y_test)
 
+        print('Length of Train Set: ', len(self.train_set))
+        print('Length of Val Set: ', len(self.val_set))
+        print('Length of Test Set: ', len(self.test_set))
+                
+
     def train_dataloader(self) -> DataLoader:
-        return DataLoader(self.train_set, batch_size=self.batch_size)
+        return DataLoader(self.train_set, batch_size=self.batch_size, num_workers=16)
 
     def val_dataloader(self) -> DataLoader:
-        return DataLoader(self.val_set, batch_size=self.batch_size)
+        return DataLoader(self.val_set, batch_size=self.batch_size, num_workers=16)
 
     def test_dataloader(self) -> DataLoader:
-        return DataLoader(self.test_set, batch_size=self.batch_size)
+        return DataLoader(self.test_set, batch_size=self.batch_size, num_workers=16)
 
     def predict_dataloader(self):
-        return DataLoader(self.test_set, batch_size=self.batch_size)
+        return DataLoader(self.test_set, batch_size=self.batch_size, num_workers=16)
 
 
 class Net(nn.Module):
@@ -164,8 +172,8 @@ class NeuralNetwork(pl.LightningModule):
         preds = torch.argmax(x, dim=1)
         train_acc = MulticlassAccuracy(num_classes=4)
         train_acc = train_acc(preds, y)
-        self.log('train_loss', train_loss, prog_bar=True)
-        self.log('train_acc', train_acc, on_step=True, on_epoch=True)
+        self.log('train_loss', train_loss)
+        self.log('train_acc', train_acc)
         return train_loss
 
     def validation_step(self, batch, batch_idx) -> None:
@@ -176,9 +184,8 @@ class NeuralNetwork(pl.LightningModule):
         x = torch.argmax(x, dim=1)
         val_acc = MulticlassAccuracy(num_classes=4)
         val_acc = val_acc(x, y)
-        self.log('val_loss', val_loss, prog_bar=True)
+        self.log('val_loss', val_loss)
         self.log('val_acc', val_acc)
-        self.log('hp_metric', val_acc, on_step=False, on_epoch=True)
 
     def test_step(self, batch, batch_idx) -> None:
         x, y = batch
@@ -188,8 +195,7 @@ class NeuralNetwork(pl.LightningModule):
         preds = torch.argmax(x, dim=1)
         accuracy = MulticlassAccuracy(num_classes=4)
         accuracy = accuracy(preds, y)
-        self.log_dict(
-            {'test_loss': test_loss, 'test_acc': accuracy}, prog_bar=True)
+        self.log_dict({'test_loss': test_loss, 'test_acc': accuracy})
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         x, y = batch
@@ -216,5 +222,5 @@ if __name__ == '__main__':
         print(f'    {key}: {value}')
 
     fig = optuna.visualization.plot_optimization_history(study)
-    fig.show()
+    # fig.show()
     retrain_objective(study.best_trial)
