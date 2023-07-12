@@ -15,6 +15,23 @@ from sklearn.metrics import classification_report
 def calc_all(model, x_test, y_test) -> list[np.array, np.array, np.array]:
 
     preds = model.predict(x_test)
+    print(preds)
+    accuracy = accuracy_score(y_test, preds)
+    cm = confusion_matrix(y_test, preds)
+    cm_norm = confusion_matrix(y_test, preds, normalize='all')
+    cohen_kappa = cohen_kappa_score(y_test, preds)
+    precision, recall, fscore, support = score(y_test, preds)
+    report = classification_report(y_test, preds)
+    print(report)
+    print('Accuracy', accuracy)
+    print('Precision', precision)
+    print('Recall', recall)
+    print('fscore:', fscore)
+    print('Cohen kappa', cohen_kappa)
+    return cm, cm_norm, preds
+
+
+def calc_all_nn(preds, y_test) -> list[np.array, np.array]:
     accuracy = accuracy_score(y_test, preds)
     cm = confusion_matrix(y_test, preds)
     cm_norm = confusion_matrix(y_test, preds, normalize='all')
@@ -33,13 +50,13 @@ def calc_all(model, x_test, y_test) -> list[np.array, np.array, np.array]:
 def mice(data, m) -> pd.DataFrame:
     imp_dfs = []
     for i in range(m):
-        mice = IterativeImputer(
+        imp = IterativeImputer(
             missing_values=np.nan,
             random_state=i,
             sample_posterior=True)
         imp_dfs.append(
             pd.DataFrame(
-                mice.fit_transform(data),
+                imp.fit_transform(data),
                 columns=data.columns))
     x = reduce(lambda x, y: x.add(y), imp_dfs) / len(imp_dfs)
     return x

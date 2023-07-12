@@ -11,7 +11,7 @@ from torch.optim.lr_scheduler import StepLR
 from torchmetrics.classification import MulticlassAccuracy
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning import loggers as pl_loggers
-
+from pytorch_lightning.loggers import TensorBoardLogger
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 
@@ -20,12 +20,14 @@ from sklearn.impute import SimpleImputer
 import numpy as np
 
 from preprocess import preprocess
-from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals
+from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, calc_all_nn
 
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
-EPOCHS = 100
+EPOCHS = 40
 TRIALS = 50
+
+
 def objective(trial) -> float:
     n_layers = trial.suggest_int('n_layers', 1, 6)
     dropout = trial.suggest_float('dropout', 0.1, 0.5)
@@ -40,7 +42,7 @@ def objective(trial) -> float:
     datamodule = DataModule(batch_size=BATCH_SIZE)
 
     trainer = pl.Trainer(
-        logger=True,
+        logger=TensorBoardLogger(save_dir='logs'),
         enable_checkpointing=True,
         max_epochs=EPOCHS,
         accelerator='auto',
@@ -65,7 +67,7 @@ def retrain_objective(trial) -> float:
     datamodule = DataModule(batch_size=BATCH_SIZE)
 
     trainer = pl.Trainer(
-        logger=True,
+        logger=TensorBoardLogger(save_dir='logs'),
         enable_checkpointing=True,
         max_epochs=EPOCHS,
         accelerator='auto',
@@ -73,9 +75,8 @@ def retrain_objective(trial) -> float:
         callbacks=PyTorchLightningPruningCallback(trial, monitor='train_loss')
     )
     trainer.fit(model, datamodule=datamodule)
-    trainer.test(datamodule=datamodule)
     preds = trainer.predict(datamodule=datamodule)
-    print(preds.shape)
+    trainer.test(datamodule=datamodule)
     return trainer.callback_metrics['test_acc'].item()
 
 
@@ -118,6 +119,7 @@ class DataModule(pl.LightningModule):
     def predict_dataloader(self):
         return DataLoader(self.test_set, batch_size=self.batch_size)
 
+
 class Net(nn.Module):
     def __init__(self, input_dim, dropout: float,
                  output_dims: List[int]) -> None:
@@ -147,7 +149,6 @@ class NeuralNetwork(pl.LightningModule):
         self.model = Net(input_dim, dropout, output_dims)
         self.save_hyperparameters()
 
-
     def forward(self, x) -> torch.Tensor:
         return self.model(x)
 
@@ -160,7 +161,11 @@ class NeuralNetwork(pl.LightningModule):
         y = y.squeeze(1)
         x = self(x)
         train_loss = F.nll_loss(x, y)
+        preds = torch.argmax(x, dim=1)
+        train_acc = MulticlassAccuracy(num_classes=4)
+        train_acc = train_acc(preds, y)
         self.log('train_loss', train_loss, prog_bar=True)
+        self.log('train_acc', train_acc, on_step=True, on_epoch=True)
         return train_loss
 
     def validation_step(self, batch, batch_idx) -> None:
@@ -168,6 +173,7 @@ class NeuralNetwork(pl.LightningModule):
         y = y.squeeze(1)
         x = self(x)
         val_loss = F.nll_loss(x, y)
+        x = torch.argmax(x, dim=1)
         val_acc = MulticlassAccuracy(num_classes=4)
         val_acc = val_acc(x, y)
         self.log('val_loss', val_loss, prog_bar=True)
@@ -178,10 +184,10 @@ class NeuralNetwork(pl.LightningModule):
         x, y = batch
         y = y.squeeze(1)
         x = self.forward(x)
-        print(x)
         test_loss = F.nll_loss(x, y)
+        preds = torch.argmax(x, dim=1)
         accuracy = MulticlassAccuracy(num_classes=4)
-        accuracy = accuracy(x, y)
+        accuracy = accuracy(preds, y)
         self.log_dict(
             {'test_loss': test_loss, 'test_acc': accuracy}, prog_bar=True)
 
@@ -189,7 +195,9 @@ class NeuralNetwork(pl.LightningModule):
         x, y = batch
         y = y.squeeze(1)
         y_hat = self.model(x)
-        return y_hat
+        preds = torch.argmax(y_hat, dim=1)
+        return preds
+
 
 if __name__ == '__main__':
 
