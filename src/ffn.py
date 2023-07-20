@@ -1,6 +1,7 @@
 import os
 from typing import List
 from typing import Optional
+from collections import defaultdict
 
 from torch import optim, nn, utils, Tensor
 import torch
@@ -24,8 +25,8 @@ from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, calc_
 
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
-EPOCHS = 40
-TRIALS = 60
+EPOCHS = 5
+TRIALS = 5
 
 
 def objective(trial) -> float:
@@ -41,13 +42,13 @@ def objective(trial) -> float:
 
     model = NeuralNetwork(21, lr, dropout, output_dims)
     datamodule = DataModule(batch_size=BATCH_SIZE)
-    hp_logger = TensorBoardLogger(save_dir='logs_hp')
+    hp_logger = TensorBoardLogger(save_dir='logs_hp', default_hp_metric=False)
     trainer = pl.Trainer(
         logger=hp_logger,
         enable_checkpointing=True,
         max_epochs=EPOCHS,
         accelerator='auto',
-        log_every_n_steps=10,
+        log_every_n_steps=1,
         callbacks=PyTorchLightningPruningCallback(trial, monitor='train_loss')
     )
     trainer.fit(model, datamodule=datamodule)
@@ -67,10 +68,6 @@ def retrain_objective(trial) -> float:
             log=True) for i in range(n_layers)]
 
     model = NeuralNetwork(21, lr, dropout, output_dims)
-    print(n_layers)
-    print(dropout)
-    print(lr)
-    print(output_dims)
     datamodule = DataModule(batch_size=BATCH_SIZE)
     retrain_logger = TensorBoardLogger(save_dir='logs')
     trainer = pl.Trainer(
@@ -78,7 +75,7 @@ def retrain_objective(trial) -> float:
         enable_checkpointing=True,
         max_epochs=EPOCHS,
         accelerator='auto',
-        log_every_n_steps=10,
+        log_every_n_steps=1,
         callbacks=PyTorchLightningPruningCallback(trial, monitor='train_loss')
     )
     trainer.fit(model, datamodule=datamodule)
@@ -172,6 +169,8 @@ class NeuralNetwork(pl.LightningModule):
         super().__init__()
         self.model = Net(input_dim, dropout, output_dims)
         self.lr = lr
+        self.dropout = dropout
+        self.output_dims = output_dims
         self.save_hyperparameters()
 
     def forward(self, x) -> torch.Tensor:
@@ -192,6 +191,9 @@ class NeuralNetwork(pl.LightningModule):
         self.log('train_loss', train_loss)
         self.log('train_acc', train_acc)
         self.log('step', self.current_epoch)
+        self.logger.log_hyperparams(
+            self.hparams, {
+                'hp/LR': self.lr, 'hp/dropout': self.dropout})
         return train_loss
 
     def validation_step(self, batch, batch_idx) -> None:
@@ -205,6 +207,9 @@ class NeuralNetwork(pl.LightningModule):
         self.log('val_loss', val_loss)
         self.log('val_acc', val_acc)
         self.log('step', self.current_epoch)
+        self.logger.log_hyperparams(
+            self.hparams, {
+                'hp/LR': self.lr, 'hp/dropout': self.dropout})
 
     def test_step(self, batch, batch_idx) -> None:
         x, y = batch
@@ -216,6 +221,9 @@ class NeuralNetwork(pl.LightningModule):
         accuracy = accuracy(preds, y)
         self.log_dict({'test_loss': test_loss, 'test_acc': accuracy})
         self.log('step', self.current_epoch)
+        self.logger.log_hyperparams(
+            self.hparams, {
+                'hp/LR': self.lr, 'hp/dropout': self.dropout})
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         x, y = batch
