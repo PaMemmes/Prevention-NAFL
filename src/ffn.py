@@ -1,13 +1,11 @@
 import os
-from typing import List
-from typing import Optional
 from collections import defaultdict
+from typing import List
 
 from torch import optim, nn, utils, Tensor
 import torch
 import pytorch_lightning as pl
 import torch.nn.functional as F
-from torch.utils.data import Dataset, DataLoader
 from torch.optim.lr_scheduler import StepLR
 from torchmetrics.classification import MulticlassAccuracy
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -20,8 +18,8 @@ import pandas as pd
 from sklearn.impute import SimpleImputer
 import numpy as np
 
-from preprocess import preprocess
 from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, calc_all_nn
+from datasets import TrainValTestDataModule, TrainTestDataModule
 
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
@@ -41,7 +39,7 @@ def objective(trial) -> float:
             log=True) for i in range(n_layers)]
 
     model = NeuralNetwork(21, lr, dropout, output_dims)
-    datamodule = DataModule(batch_size=BATCH_SIZE)
+    datamodule = TrainValTestDataModule(batch_size=BATCH_SIZE)
     hp_logger = TensorBoardLogger(save_dir='logs_hp', default_hp_metric=False)
     trainer = pl.Trainer(
         logger=hp_logger,
@@ -68,7 +66,7 @@ def retrain_objective(trial) -> float:
             log=True) for i in range(n_layers)]
 
     model = NeuralNetwork(21, lr, dropout, output_dims)
-    datamodule = DataModule(batch_size=BATCH_SIZE)
+    datamodule = TrainTestDataModule(batch_size=BATCH_SIZE)
     retrain_logger = TensorBoardLogger(save_dir='logs')
     trainer = pl.Trainer(
         logger=retrain_logger,
@@ -85,60 +83,8 @@ def retrain_objective(trial) -> float:
     return trainer.callback_metrics['test_acc'].item()
 
 
-class KaggleDataSet(Dataset):
-    def __init__(self, x, y) -> None:
-        x, y = x.values, y.values
-        self.x = torch.tensor(x, dtype=torch.float32)
-        self.y = torch.tensor(y, dtype=torch.long)
-
-    def __len__(self) -> int:
-        return len(self.y)
-
-    def __getitem__(self, idx) -> tuple[torch.tensor, torch.tensor]:
-        return self.x[idx], self.y[idx]
 
 
-class DataModule(pl.LightningModule):
-    def __init__(self, batch_size) -> None:
-        super().__init__()
-        self.batch_size = batch_size
-
-    def setup(self, stage: Optional[str] = None) -> None:
-        df = pd.read_csv('../data/kaggle_cirrhosis.csv')
-        x_train, x_val, x_test, y_train, y_val, y_test = preprocess(
-            df, nn=True)
-
-        self.train_set = KaggleDataSet(x_train, y_train)
-        self.val_set = KaggleDataSet(x_val, y_val)
-        self.test_set = KaggleDataSet(x_test, y_test)
-
-        print('Length of Train Set: ', len(self.train_set))
-        print('Length of Val Set: ', len(self.val_set))
-        print('Length of Test Set: ', len(self.test_set))
-
-    def train_dataloader(self) -> DataLoader:
-        return DataLoader(
-            self.train_set,
-            batch_size=self.batch_size,
-            num_workers=16)
-
-    def val_dataloader(self) -> DataLoader:
-        return DataLoader(
-            self.val_set,
-            batch_size=self.batch_size,
-            num_workers=16)
-
-    def test_dataloader(self) -> DataLoader:
-        return DataLoader(
-            self.test_set,
-            batch_size=self.batch_size,
-            num_workers=16)
-
-    def predict_dataloader(self):
-        return DataLoader(
-            self.test_set,
-            batch_size=self.batch_size,
-            num_workers=16)
 
 
 class Net(nn.Module):

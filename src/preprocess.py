@@ -43,4 +43,7 @@ def preprocess(df,
         return x_train, x_val, x_test, y_train.astype(
             int), y_val.astype(int), y_test.astype(int)
 
+    scaler = MinMaxScaler()
+    x_train = pd.DataFrame(scaler.fit_transform(x_train))
+    x_test = pd.DataFrame(scaler.transform(x_test))
     return x_train, x_test, y_train.astype(int), y_test.astype(int), x.columns
