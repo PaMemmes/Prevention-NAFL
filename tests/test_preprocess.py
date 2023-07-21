@@ -7,39 +7,15 @@ from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 
 # from src.preprocess import preprocess
 
-from src.utils.utils import calc_all, remove_y_nans, factorize, one_hot_encoding, get_categoricals
+from src.utils.utils import calc_all, mice, remove_y_nans, factorize, one_hot_encoding, get_categoricals
 
 
 @pytest.fixture
 def example_df():
     return pd.DataFrame(
         {
-            'Feature1': [
-                1,
-                3,
-                5,
-                float('Nan'),
-                100000,
-                4,
-                -10,
-                4,
-                5,
-                float('inf'),
-                float('-inf'),
-                float('nan')],
-            'Feature2': [
-                3,
-                12,
-                5,
-                3,
-                3,
-                1,
-                4,
-                10,
-                51,
-                5,
-                10000,
-                -1053445],
+            'Feature1': [1,3,5,float('Nan'),100000,float(np.inf),-10,4,5,10,12,float('nan')],
+            'Feature2': [3,12,5,3,3,1,4,10,float(-np.inf),5,10000,-1053445],
             'Feature3': [
                 'Yes',
                 'No',
@@ -75,7 +51,7 @@ def example_xy(example_df):
     return x, y
 
 
-def test_remove_infs(example_xy):
+def test_remove_y_nans(example_xy):
     x, y = example_xy
     y = pd.DataFrame(y, columns=['Label'])
     df, labels = remove_y_nans(x, y)
@@ -91,3 +67,13 @@ def test_oh_encoding(example_df):
         include=np.number).shape[1]
     assert df_false.shape[1] != df_false.select_dtypes(
         include=np.number).shape[1]
+
+
+def test_mice(example_xy):
+    x, _ = example_xy
+    x = x.drop('Label', axis=1)
+    x = one_hot_encoding(x, x.columns, 3)
+    assert x.isnull().sum().sum() != 0
+    x = mice(x, 5)
+    assert x.isnull().values.any() == 0
+    
