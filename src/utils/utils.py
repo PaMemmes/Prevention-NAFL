@@ -48,6 +48,7 @@ def calc_all_nn(preds, y_test) -> list[np.array, np.array]:
 
 
 def mice(data, m) -> pd.DataFrame:
+    data = data.replace([np.inf, -np.inf], np.nan)
     imp_dfs = []
     for i in range(m):
         imp = IterativeImputer(
