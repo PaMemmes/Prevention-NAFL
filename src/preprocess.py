@@ -17,12 +17,9 @@ def preprocess(df,
     y = df['Stage'] - 1
     x = df.drop('Stage', axis=1)
     x = x.drop(['N_Days', 'Status', 'Drug'], axis=1)
-    cat_cols = get_categoricals(x)
-
-    for col in cat_cols:
-        x[col].fillna(x[col].mode().values[0], inplace=True)
 
     x = one_hot_encoding(x, x.columns, cardinality=4)
+    
     x = mice(x, 50)
     y = pd.DataFrame(y, columns=['Stage'])
 
@@ -35,7 +32,7 @@ def preprocess(df,
             x_train, y_train, stratify=y_train, test_size=0.15, random_state=20)
         # val is 0.85*0.15 = 0.1275
         # train is 0.85*0.85 = 0.7225
-        
+
         scaler = MinMaxScaler()
         x_train = pd.DataFrame(scaler.fit_transform(x_train))
         x_val = pd.DataFrame(scaler.transform(x_val))

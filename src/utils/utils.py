@@ -73,12 +73,6 @@ def remove_y_nans(x, y) -> tuple[pd.DataFrame, pd.DataFrame]:
     return x, y
 
 
-def factorize(df, cols) -> pd.DataFrame:
-    for col in cols:
-        df[col] = pd.factorize(df[col])[0] + 1
-    return df
-
-
 def one_hot_encoding(df, cols, cardinality) -> pd.DataFrame:
     low_cardinality_cols = [
         col for col in cols if df[col].nunique() <= cardinality]
@@ -91,10 +85,3 @@ def one_hot_encoding(df, cols, cardinality) -> pd.DataFrame:
 
     df.columns = df.columns.astype(str)
     return df
-
-
-def get_categoricals(df) -> list:
-    num_cols = df._get_numeric_data().columns
-
-    cats = list(set(df.columns) - set(num_cols))
-    return cats
