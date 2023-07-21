@@ -48,7 +48,5 @@ def train(x_train, x_test, y_train, y_test) -> xgb.sklearn.XGBClassifier:
     plot_confusion_matrix(cm, name='cm')
 
     print(model.best_params_)
-    # with open('../results/results.json', 'w', encoding='utf-8') as f:
-    #     json.dump(metrics, f, ensure_ascii=False, indent=4)
     print('Model best estimate', type(model.best_estimator_))
     return model.best_estimator_
