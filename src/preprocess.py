@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.impute import SimpleImputer
-from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, mice
+from utils.utils import remove_y_nans, one_hot_encoding, mice
 
 
 def preprocess(df,
@@ -25,11 +25,7 @@ def preprocess(df,
     x = one_hot_encoding(x, x.columns, cardinality=4)
     x_num = mice(x, 10)
 
-
-    
     y = pd.DataFrame(y, columns=['Stage'])
-    print(x.shape)
-    print(x)
     x, y = remove_y_nans(x, y)
 
     x_train, x_test, y_train, y_test = train_test_split(

@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 
 # from src.preprocess import preprocess
 
-from src.utils.utils import calc_all, mice, remove_y_nans, factorize, one_hot_encoding, get_categoricals
+from src.utils.utils import calc_all, mice, remove_y_nans, one_hot_encoding
 
 
 @pytest.fixture
