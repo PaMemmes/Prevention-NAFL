@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.impute import SimpleImputer
 from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, mice
 
 
@@ -17,12 +18,18 @@ def preprocess(df,
     y = df['Stage'] - 1
     x = df.drop('Stage', axis=1)
     x = x.drop(['N_Days', 'Status', 'Drug'], axis=1)
-
-    x = one_hot_encoding(x, x.columns, cardinality=4)
+    pd.set_option('display.max_columns', None)
     
-    x = mice(x, 50)
-    y = pd.DataFrame(y, columns=['Stage'])
+    imp = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
+    x = pd.DataFrame(imp.fit_transform(x), columns=x.columns)
+    x = one_hot_encoding(x, x.columns, cardinality=4)
+    x_num = mice(x, 10)
 
+
+    
+    y = pd.DataFrame(y, columns=['Stage'])
+    print(x.shape)
+    print(x)
     x, y = remove_y_nans(x, y)
 
     x_train, x_test, y_train, y_test = train_test_split(
