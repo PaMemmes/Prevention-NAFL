@@ -45,7 +45,7 @@ def train(x_train, x_test, y_train, y_test) -> xgb.sklearn.XGBClassifier:
     print("GridSearchCV took %.2f seconds for %d candidate parameter settings." % (
         time() - start, len(clf.cv_results_["params"])))
     cm, cm_norm, preds = calc_all(model.best_estimator_, x_test, y_test)
-    plot_confusion_matrix(cm, name='cm')
+    plot_confusion_matrix(cm, name='cm_xg')
 
     print(model.best_params_)
     print('Model best estimate', type(model.best_estimator_))

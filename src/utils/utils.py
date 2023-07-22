@@ -40,11 +40,9 @@ def calc_all_nn(preds, y_test) -> list[np.array, np.array]:
     report = classification_report(y_test, preds)
     print(report)
     print('Accuracy', accuracy)
-    print('Precision', precision)
-    print('Recall', recall)
     print('fscore:', fscore)
     print('Cohen kappa', cohen_kappa)
-    return cm, cm_norm, preds
+    return cm, cm_norm
 
 
 def mice(data, m) -> pd.DataFrame:
