@@ -13,18 +13,21 @@ from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.loggers import TensorBoardLogger
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
+from torchmetrics import Accuracy
 
 import pandas as pd
 from sklearn.impute import SimpleImputer
 import numpy as np
+import matplotlib.pyplot as plt
 
-from utils.utils import remove_y_nans, one_hot_encoding, get_categoricals, calc_all_nn
+from utils.utils import calc_all_nn
 from datasets import TrainValTestDataModule, TrainTestDataModule
+from utils.plots import plot_confusion_matrix
 
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
-EPOCHS = 5
-TRIALS = 5
+EPOCHS = 1
+TRIALS = 1
 
 
 def objective(trial) -> float:
@@ -77,14 +80,13 @@ def retrain_objective(trial) -> float:
         callbacks=PyTorchLightningPruningCallback(trial, monitor='train_loss')
     )
     trainer.fit(model, datamodule=datamodule)
-    preds = trainer.predict(model, datamodule=datamodule, ckpt_path='best')
     trainer.test(model, datamodule=datamodule, ckpt_path='best')
+    y = datamodule.test_set.y.numpy()
+    y = [item for sublist in y for item in sublist]
+    cm, cm_norm = calc_all_nn(model.test_preds, y)
+    plot_confusion_matrix(cm, name='cm_nn')
     retrain_logger.finalize('success')
     return trainer.callback_metrics['test_acc'].item()
-
-
-
-
 
 
 class Net(nn.Module):
@@ -118,6 +120,8 @@ class NeuralNetwork(pl.LightningModule):
         self.dropout = dropout
         self.output_dims = output_dims
         self.save_hyperparameters()
+
+        self.test_preds = []
 
     def forward(self, x) -> torch.Tensor:
         return self.model(x)
@@ -163,7 +167,8 @@ class NeuralNetwork(pl.LightningModule):
         x = self.forward(x)
         test_loss = F.nll_loss(x, y)
         preds = torch.argmax(x, dim=1)
-        accuracy = MulticlassAccuracy(num_classes=4)
+        self.test_preds.extend(preds.numpy())
+        accuracy = Accuracy(task='multiclass', num_classes=4)
         accuracy = accuracy(preds, y)
         self.log_dict({'test_loss': test_loss, 'test_acc': accuracy})
         self.log('step', self.current_epoch)
@@ -196,5 +201,5 @@ if __name__ == '__main__':
         print(f'    {key}: {value}')
 
     fig = optuna.visualization.plot_optimization_history(study)
-    # fig.show()
+    plt.savefig('../results/optim.png')
     retrain_objective(study.best_trial)
