@@ -27,9 +27,10 @@ class TrainValTestDataModule(pl.LightningModule):
 
     def setup(self, stage: Optional[str] = None) -> None:
         df = pd.read_csv('../data/kaggle_cirrhosis.csv')
-        x_train, x_val, x_test, y_train, y_val, y_test = preprocess(
+        x_train, x_val, x_test, y_train, y_val, y_test, df_cols = preprocess(
             df, nn=True)
-
+        
+        self.df_cols = df_cols
         self.train_set = KaggleDataSet(x_train, y_train)
         self.val_set = KaggleDataSet(x_val, y_val)
         self.test_set = KaggleDataSet(x_test, y_test)
@@ -57,8 +58,9 @@ class TrainTestDataModule(pl.LightningModule):
 
     def setup(self, stage: Optional[str] = None) -> None:
         df = pd.read_csv('../data/kaggle_cirrhosis.csv')
-        x_train, x_test, y_train, y_test, _ = preprocess(df, nn=False)
-
+        x_train, x_test, y_train, y_test, df_cols = preprocess(df, nn=False)
+        
+        self.df_cols = df_cols
         self.train_set = KaggleDataSet(x_train, y_train)
         self.test_set = KaggleDataSet(x_test, y_test)
 
