@@ -23,11 +23,12 @@ import matplotlib.pyplot as plt
 from utils.utils import calc_all_nn
 from datasets import TrainValTestDataModule, TrainTestDataModule
 from utils.plots import plot_confusion_matrix
+from interpret import interpret_tree
 
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
-EPOCHS = 1
-TRIALS = 1
+EPOCHS = 5
+TRIALS = 5
 
 
 def objective(trial) -> float:
@@ -50,10 +51,11 @@ def objective(trial) -> float:
         max_epochs=EPOCHS,
         accelerator='auto',
         log_every_n_steps=1,
-        callbacks=PyTorchLightningPruningCallback(trial, monitor='train_loss')
+        callbacks=PyTorchLightningPruningCallback(trial, monitor='val_loss')
     )
     trainer.fit(model, datamodule=datamodule)
     hp_logger.finalize('success')
+
     return trainer.callback_metrics['val_acc'].item()
 
 
@@ -76,8 +78,7 @@ def retrain_objective(trial) -> float:
         enable_checkpointing=True,
         max_epochs=EPOCHS,
         accelerator='auto',
-        log_every_n_steps=1,
-        callbacks=PyTorchLightningPruningCallback(trial, monitor='train_loss')
+        log_every_n_steps=1
     )
     trainer.fit(model, datamodule=datamodule)
     trainer.test(model, datamodule=datamodule, ckpt_path='best')
@@ -86,6 +87,8 @@ def retrain_objective(trial) -> float:
     cm, cm_norm = calc_all_nn(model.test_preds, y)
     plot_confusion_matrix(cm, name='cm_nn')
     retrain_logger.finalize('success')
+    interpret_tree(model, datamodule.train_set.x, datamodule.test_set.x, datamodule.df_cols, nn=True)
+
     return trainer.callback_metrics['test_acc'].item()
 
 
