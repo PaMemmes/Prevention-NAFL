@@ -55,8 +55,8 @@ def test_remove_y_nans(example_xy):
     x, y = example_xy
     y = pd.DataFrame(y, columns=['Label'])
     df, labels = remove_y_nans(x, y)
-    assert y.isnull().sum().sum() == 0
-
+    assert labels.isnull().sum().sum() == 0
+    assert len(df) == len(labels)
 
 def test_oh_encoding(example_df):
     df = example_df
@@ -76,4 +76,3 @@ def test_mice(example_xy):
     assert x.isnull().sum().sum() != 0
     x = mice(x, 5)
     assert x.isnull().values.any() == 0
-    
