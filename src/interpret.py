@@ -9,8 +9,9 @@ def interpret_tree(model, train, test, df_cols, nn=False) -> None:
     print('Starting interpreting...')
     
     test_df = test
-    inf_data = train[:100]
-    print(inf_data)
+    inf_inds = torch.randperm(len(test))[:100]
+    inf_data = train[inf_inds]
+
     if nn is True:
         explainer = shap.DeepExplainer(model, data=inf_data)
         model_name = 'ffn'
