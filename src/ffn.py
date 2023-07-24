@@ -41,8 +41,12 @@ def objective(trial) -> float:
             4,
             128,
             log=True) for i in range(n_layers)]
-
-    model = NeuralNetwork(21, lr, dropout, output_dims)
+    loss_weight = torch.Tensor([trial.suggest_float(
+            'weight_w{}'.format(i),
+            1,
+            10) for i in range(4)])
+    
+    model = NeuralNetwork(21, lr, dropout, output_dims, loss_weight)
     datamodule = TrainValTestDataModule(batch_size=BATCH_SIZE)
     hp_logger = TensorBoardLogger(save_dir='logs_hp', default_hp_metric=False)
     trainer = pl.Trainer(
@@ -69,8 +73,12 @@ def retrain_objective(trial) -> float:
             4,
             128,
             log=True) for i in range(n_layers)]
+    loss_weight = torch.Tensor([trial.suggest_float(
+            'weight_w{}'.format(i),
+            1,
+            10) for i in range(4)])
 
-    model = NeuralNetwork(21, lr, dropout, output_dims)
+    model = NeuralNetwork(21, lr, dropout, output_dims, loss_weight)
     datamodule = TrainTestDataModule(batch_size=BATCH_SIZE)
     retrain_logger = TensorBoardLogger(save_dir='logs')
     trainer = pl.Trainer(
@@ -86,6 +94,8 @@ def retrain_objective(trial) -> float:
     y = [item for sublist in y for item in sublist]
     cm, cm_norm = calc_all_nn(model.test_preds, y)
     plot_confusion_matrix(cm, name='cm_nn')
+    plot_confusion_matrix(cm_norm, name='cm_nn_norm')
+    
     retrain_logger.finalize('success')
     interpret_tree(model, datamodule.train_set.x, datamodule.test_set.x, datamodule.df_cols, nn=True)
 
@@ -116,12 +126,13 @@ class Net(nn.Module):
 
 
 class NeuralNetwork(pl.LightningModule):
-    def __init__(self, input_dim, lr, dropout, output_dims) -> None:
+    def __init__(self, input_dim, lr, dropout, output_dims, loss_weight) -> None:
         super().__init__()
         self.model = Net(input_dim, dropout, output_dims)
         self.lr = lr
         self.dropout = dropout
         self.output_dims = output_dims
+        self.loss_weight = loss_weight
         self.save_hyperparameters()
 
         self.test_preds = []
@@ -137,7 +148,7 @@ class NeuralNetwork(pl.LightningModule):
         x, y = batch
         y = y.squeeze(1)
         x = self(x)
-        train_loss = F.nll_loss(x, y)
+        train_loss = F.nll_loss(x, y, weight=self.loss_weight)
         preds = torch.argmax(x, dim=1)
         train_acc = MulticlassAccuracy(num_classes=4)
         train_acc = train_acc(preds, y)
@@ -153,7 +164,7 @@ class NeuralNetwork(pl.LightningModule):
         x, y = batch
         y = y.squeeze(1)
         x = self(x)
-        val_loss = F.nll_loss(x, y)
+        val_loss = F.nll_loss(x, y, weight=self.loss_weight)
         x = torch.argmax(x, dim=1)
         val_acc = MulticlassAccuracy(num_classes=4)
         val_acc = val_acc(x, y)
@@ -168,7 +179,7 @@ class NeuralNetwork(pl.LightningModule):
         x, y = batch
         y = y.squeeze(1)
         x = self.forward(x)
-        test_loss = F.nll_loss(x, y)
+        test_loss = F.nll_loss(x, y, weight=self.loss_weight)
         preds = torch.argmax(x, dim=1)
         self.test_preds.extend(preds.numpy())
         accuracy = Accuracy(task='multiclass', num_classes=4)
