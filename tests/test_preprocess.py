@@ -48,6 +48,7 @@ def example_df():
 def example_xy(example_df):
     x = example_df
     y = example_df['Label']
+    x = x.drop('Label', axis=1)
     return x, y
 
 
@@ -58,9 +59,9 @@ def test_remove_y_nans(example_xy):
     assert labels.isnull().sum().sum() == 0
     assert len(df) == len(labels)
 
-def test_oh_encoding(example_df):
-    df = example_df
-    df = df.drop('Label', axis=1)
+
+def test_oh_encoding(example_xy):
+    df, _ = example_xy
     df_true = one_hot_encoding(df, df.columns, 3)
     df_false = one_hot_encoding(df, df.columns, 1)
     assert df_true.shape[1] == df_true.select_dtypes(
@@ -71,7 +72,6 @@ def test_oh_encoding(example_df):
 
 def test_mice(example_xy):
     x, _ = example_xy
-    x = x.drop('Label', axis=1)
     x = one_hot_encoding(x, x.columns, 3)
     assert x.isnull().sum().sum() != 0
     x = mice(x, 5)

@@ -14,7 +14,6 @@ def train(x_train, x_test, y_train, y_test) -> xgb.sklearn.XGBClassifier:
     params = {
         'num_rounds': 10,
         'max_depth': 8,
-        'max_leaves': 2**8,
         'alpha': 0.9,
         'eta': 0.1,
         'gamma': 0.1,
@@ -31,10 +30,8 @@ def train(x_train, x_test, y_train, y_test) -> xgb.sklearn.XGBClassifier:
 
     hyperparameter_grid = {
         'max_depth': [3, 6, 9],
-        'learning_rate': [0.05, 0.1, 0.20],
-        'max_leaves': [2**4, 2**6, 2**8],
-        'eta': [x for x in np.linspace(0.1, 0.6, 6)],
-        'gamma': [int(x) for x in np.linspace(0, 0.5, 6)]
+        'eta': list(np.linspace(0.1, 0.6, 6)),
+        'gamma': [int(x) for x in np.linspace(0, 10, 10)]
     }
 
     bst = xgb.XGBClassifier(**params)

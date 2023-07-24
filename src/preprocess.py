@@ -8,11 +8,7 @@ from utils.utils import remove_y_nans, one_hot_encoding, mice
 
 
 def preprocess(df,
-               nn=False) -> list[pd.DataFrame,
-                                 pd.DataFrame,
-                                 pd.DataFrame,
-                                 pd.DataFrame,
-                                 pd.Index]:
+               nn=False):
     df = df.drop('ID', axis=1)
     df['Age'] = df['Age'] / 365
     y = df['Stage'] - 1
@@ -31,10 +27,11 @@ def preprocess(df,
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, stratify=y, test_size=0.15, random_state=20)
     if nn:
-        x_train, x_val, y_train, y_val = train_test_split(
-            x_train, y_train, stratify=y_train, test_size=0.15, random_state=20)
         # val is 0.85*0.15 = 0.1275
         # train is 0.85*0.85 = 0.7225
+        x_train, x_val, y_train, y_val = train_test_split(
+            x_train, y_train, stratify=y_train, test_size=0.15, random_state=20)
+        
 
         scaler = MinMaxScaler()
         x_train = pd.DataFrame(scaler.fit_transform(x_train))
