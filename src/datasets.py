@@ -43,13 +43,15 @@ class TrainValTestDataModule(pl.LightningModule):
         return DataLoader(
             self.train_set,
             batch_size=self.batch_size,
-            num_workers=16)
+            num_workers=8,
+            persistent_workers= True)
 
     def val_dataloader(self) -> DataLoader:
         return DataLoader(
             self.val_set,
             batch_size=self.batch_size,
-            num_workers=16)
+            num_workers=8,
+            persistent_workers= True)
 
 class TrainTestDataModule(pl.LightningModule):
     def __init__(self, batch_size) -> None:
@@ -71,15 +73,19 @@ class TrainTestDataModule(pl.LightningModule):
         return DataLoader(
             self.train_set,
             batch_size=self.batch_size,
-            num_workers=16)
+            num_workers=8,
+            persistent_workers= True)
+
     def test_dataloader(self) -> DataLoader:
         return DataLoader(
             self.test_set,
             batch_size=self.batch_size,
-            num_workers=16)
+            num_workers=8,
+            persistent_workers= True)
 
     def predict_dataloader(self):
         return DataLoader(
             self.test_set,
             batch_size=self.batch_size,
-            num_workers=16)
+            num_workers=8,
+            persistent_workers= True)

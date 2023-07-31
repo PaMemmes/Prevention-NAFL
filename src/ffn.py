@@ -28,13 +28,13 @@ from interpret import interpret_tree
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
 EPOCHS = 50
-TRIALS = 50
+TRIALS = 100
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def objective(trial) -> float:
-    n_layers = trial.suggest_int('n_layers', 1, 9)
-    dropout = trial.suggest_float('dropout', 0.1, 0.5)
+    n_layers = trial.suggest_int('n_layers', 1, 7)
+    dropout = trial.suggest_float('dropout', 0.1, 0.4)
     lr = trial.suggest_float('learning_rate', 1e-5, 1e-2)
     output_dims = [
         trial.suggest_int(
@@ -182,8 +182,8 @@ class NeuralNetwork(pl.LightningModule):
         x = self.forward(x)
         test_loss = F.nll_loss(x, y, weight=self.loss_weight)
         preds = torch.argmax(x, dim=1)
-        self.test_preds.extend(preds.numpy())
-        accuracy = Accuracy(task='multiclass', num_classes=4)
+        self.test_preds.extend(preds.cpu().numpy())
+        accuracy = Accuracy(task='multiclass', num_classes=4).to(device)
         accuracy = accuracy(preds, y)
         self.log_dict({'test_loss': test_loss, 'test_acc': accuracy})
         self.log('step', self.current_epoch)
@@ -216,5 +216,6 @@ if __name__ == '__main__':
         print(f'    {key}: {value}')
 
     fig = optuna.visualization.plot_optimization_history(study)
-    plt.savefig('../results/optim.png')
+    fig.show()
+
     retrain_objective(study.best_trial)
