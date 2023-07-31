@@ -27,9 +27,10 @@ from interpret import interpret_tree
 
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
-EPOCHS = 5
-TRIALS = 5
+EPOCHS = 50
+TRIALS = 50
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def objective(trial) -> float:
     n_layers = trial.suggest_int('n_layers', 1, 9)
@@ -53,7 +54,7 @@ def objective(trial) -> float:
         logger=hp_logger,
         enable_checkpointing=True,
         max_epochs=EPOCHS,
-        accelerator='auto',
+        accelerator='gpu',
         log_every_n_steps=1,
         callbacks=PyTorchLightningPruningCallback(trial, monitor='val_loss')
     )
@@ -85,7 +86,7 @@ def retrain_objective(trial) -> float:
         logger=retrain_logger,
         enable_checkpointing=True,
         max_epochs=EPOCHS,
-        accelerator='auto',
+        accelerator='gpu',
         log_every_n_steps=1
     )
     trainer.fit(model, datamodule=datamodule)
@@ -132,7 +133,7 @@ class NeuralNetwork(pl.LightningModule):
         self.lr = lr
         self.dropout = dropout
         self.output_dims = output_dims
-        self.loss_weight = loss_weight
+        self.loss_weight = loss_weight.cuda()
         self.save_hyperparameters()
 
         self.test_preds = []
@@ -150,7 +151,7 @@ class NeuralNetwork(pl.LightningModule):
         x = self(x)
         train_loss = F.nll_loss(x, y, weight=self.loss_weight)
         preds = torch.argmax(x, dim=1)
-        train_acc = MulticlassAccuracy(num_classes=4)
+        train_acc = MulticlassAccuracy(num_classes=4).to(device)
         train_acc = train_acc(preds, y)
         self.log('train_loss', train_loss)
         self.log('train_acc', train_acc)
@@ -166,7 +167,7 @@ class NeuralNetwork(pl.LightningModule):
         x = self(x)
         val_loss = F.nll_loss(x, y, weight=self.loss_weight)
         x = torch.argmax(x, dim=1)
-        val_acc = MulticlassAccuracy(num_classes=4)
+        val_acc = MulticlassAccuracy(num_classes=4).to(device)
         val_acc = val_acc(x, y)
         self.log('val_loss', val_loss)
         self.log('val_acc', val_acc)

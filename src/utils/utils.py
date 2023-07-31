@@ -2,6 +2,7 @@ from collections import defaultdict
 from functools import reduce
 import numpy as np
 import pandas as pd
+import json
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
@@ -15,13 +16,15 @@ from sklearn.metrics import classification_report
 def calc_all(model, x_test, y_test) -> list[np.array, np.array, np.array]:
 
     preds = model.predict(x_test)
-    print(preds)
     accuracy = accuracy_score(y_test, preds)
     cm = confusion_matrix(y_test, preds)
     cm_norm = confusion_matrix(y_test, preds, normalize='all')
     cohen_kappa = cohen_kappa_score(y_test, preds)
     precision, recall, fscore, support = score(y_test, preds)
     report = classification_report(y_test, preds)
+    with open('../results/res.json', 'w', encoding='utf-8') as f:
+        json.dump({'Report': report}, f, ensure_ascii=False, indent=4)
+
     print(report)
     print('Accuracy', accuracy)
     print('Precision', precision)
@@ -38,6 +41,8 @@ def calc_all_nn(preds, y_test) -> list[np.array, np.array]:
     cohen_kappa = cohen_kappa_score(y_test, preds)
     precision, recall, fscore, support = score(y_test, preds)
     report = classification_report(y_test, preds)
+    with open('../results/nn_res.json', 'w', encoding='utf-8') as f:
+            json.dump({'Report': report}, f, ensure_ascii=False, indent=4)
     print(report)
     print('Accuracy', accuracy)
     print('fscore:', fscore)
