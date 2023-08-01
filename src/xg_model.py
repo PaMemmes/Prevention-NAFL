@@ -35,7 +35,7 @@ def train(x_train, x_test, y_train, y_test) -> xgb.sklearn.XGBClassifier:
     }
 
     bst = xgb.XGBClassifier(**params)
-    clf = RandomizedSearchCV(bst, hyperparameter_grid, n_iter=80)
+    clf = RandomizedSearchCV(bst, hyperparameter_grid, n_iter=100)
 
     start = time()
     model = clf.fit(x_train, y_train)

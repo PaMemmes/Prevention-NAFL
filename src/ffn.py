@@ -28,7 +28,7 @@ from interpret import interpret_tree
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
 EPOCHS = 50
-TRIALS = 100
+TRIALS = 150
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 

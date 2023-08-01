@@ -23,7 +23,9 @@ def calc_all(model, x_test, y_test) -> list[np.array, np.array, np.array]:
     precision, recall, fscore, support = score(y_test, preds)
     report = classification_report(y_test, preds)
     with open('../results/res.json', 'w', encoding='utf-8') as f:
-        json.dump({'Report': report}, f, ensure_ascii=False, indent=4)
+        json.dump({'Precision': precision.tolist(), 
+        'Recall': recall.tolist(), 'F1': fscore.tolist(), 'Support': support.tolist()
+        , 'CohenCappa': cohen_kappa.tolist()}, f, ensure_ascii=False, indent=4)
 
     print(report)
     print('Accuracy', accuracy)
