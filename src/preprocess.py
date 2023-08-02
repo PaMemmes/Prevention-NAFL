@@ -7,13 +7,12 @@ from utils.utils import remove_y_nans, handle_nans_gracefully, handle_nans_simpl
 
 
 def preprocess(df,
-               nn=False):
+               val=False):
     df = df.drop('ID', axis=1)
     df['Age'] = df['Age'] / 365
     y = df['Stage'] - 1
     x = df.drop('Stage', axis=1)
     x = x.drop(['N_Days', 'Status', 'Drug'], axis=1)
-    pd.set_option('display.max_columns', None)
     
     ##########################################
     x = handle_nans_simple(x)
@@ -24,7 +23,7 @@ def preprocess(df,
 
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, stratify=y, test_size=0.15, random_state=20)
-    if nn:
+    if val:
         # val is 0.85*0.15 = 0.1275
         # train is 0.85*0.85 = 0.7225
         x_train, x_val, y_train, y_val = train_test_split(
