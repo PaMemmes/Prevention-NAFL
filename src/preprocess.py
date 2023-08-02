@@ -3,8 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.impute import SimpleImputer
-from utils.utils import remove_y_nans, one_hot_encoding, mice
+from utils.utils import remove_y_nans, handle_nans_gracefully, handle_nans_simple
 
 
 def preprocess(df,
@@ -16,10 +15,9 @@ def preprocess(df,
     x = x.drop(['N_Days', 'Status', 'Drug'], axis=1)
     pd.set_option('display.max_columns', None)
     
-    imp = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
-    x = pd.DataFrame(imp.fit_transform(x), columns=x.columns)
-    x = one_hot_encoding(x, x.columns, cardinality=4)
-    x_num = mice(x, 10)
+    ##########################################
+    x = handle_nans_simple(x)
+    ##########################################
 
     y = pd.DataFrame(y, columns=['Stage'])
     x, y = remove_y_nans(x, y)

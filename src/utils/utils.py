@@ -11,6 +11,7 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import cohen_kappa_score
 from sklearn.metrics import precision_recall_fscore_support as score
 from sklearn.metrics import classification_report
+from sklearn.impute import SimpleImputer
 
 
 def calc_all(model, x_test, y_test) -> list[np.array, np.array, np.array]:
@@ -53,6 +54,21 @@ def calc_all_nn(preds, y_test) -> list[np.array, np.array]:
     print('Cohen kappa', cohen_kappa)
     return cm, cm_norm
 
+def handle_nans_simple(x):
+    imp = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
+    x = pd.DataFrame(imp.fit_transform(x), columns=x.columns)
+    x = one_hot_encoding(x, x.columns, cardinality=4)
+    return x
+
+def handle_nans_gracefully(x):
+    num_cols = x._get_numeric_data().columns
+    cat_cols = list(set(x.columns) - set(num_cols))
+    imp = SimpleImputer(missing_values=np.nan, strategy='most_frequent')
+    x_cat = pd.DataFrame(imp.fit_transform(x[cat_cols]), columns=cat_cols)
+    x_num = mice(x[num_cols], 50)
+    x = pd.concat([x_cat, x_num], axis=1)
+    x = one_hot_encoding(x, x.columns, cardinality=4)
+    return x
 
 def mice(data, m) -> pd.DataFrame:
     data = data.replace([np.inf, -np.inf], np.nan)
