@@ -26,7 +26,7 @@ def calc_all(model, x_test, y_test) -> list[np.array, np.array, np.array]:
     with open('../results/res.json', 'w', encoding='utf-8') as f:
         json.dump({'Precision': precision.tolist(), 
         'Recall': recall.tolist(), 'F1': fscore.tolist(), 'Support': support.tolist()
-        , 'CohenCappa': cohen_kappa.tolist()}, f, ensure_ascii=False, indent=4)
+        , 'CohenCappa': cohen_kappa.tolist(), 'Accuracy':accuracy.tolist()}, f, ensure_ascii=False, indent=4)
 
     print(report)
     print('Accuracy', accuracy)
@@ -47,7 +47,7 @@ def calc_all_nn(preds, y_test) -> list[np.array, np.array]:
     with open('../results/nn_res.json', 'w', encoding='utf-8') as f:
             json.dump({'Precision': precision.tolist(), 
             'Recall': recall.tolist(), 'F1': fscore.tolist(), 'Support': support.tolist()
-            , 'CohenCappa': cohen_kappa.tolist()}, f, ensure_ascii=False, indent=4)
+            , 'CohenCappa': cohen_kappa.tolist(), 'Accuracy':accuracy.tolist()}, f, ensure_ascii=False, indent=4)
     print(report)
     print('Accuracy', accuracy)
     print('fscore:', fscore)

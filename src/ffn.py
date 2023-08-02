@@ -1,6 +1,7 @@
 import os
 from collections import defaultdict
 from typing import List
+import json
 
 from torch import optim, nn, utils, Tensor
 import torch
@@ -28,7 +29,7 @@ from interpret import interpret_tree
 MODEL_DIR = 'logs/'
 BATCH_SIZE = 8
 EPOCHS = 50
-TRIALS = 150
+TRIALS = 100
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -96,7 +97,7 @@ def retrain_objective(trial) -> float:
     cm, cm_norm = calc_all_nn(model.test_preds, y)
     plot_confusion_matrix(cm, name='cm_nn')
     plot_confusion_matrix(cm_norm, name='cm_nn_norm')
-    
+
     retrain_logger.finalize('success')
     interpret_tree(model, datamodule.train_set.x, datamodule.test_set.x, datamodule.df_cols, nn=True)
 
@@ -217,5 +218,8 @@ if __name__ == '__main__':
 
     fig = optuna.visualization.plot_optimization_history(study)
     fig.show()
-
+    print(study.best_trial)
+    with open('../results/res.json', 'w', encoding='utf-8') as f:
+        for key, value in trial.params.items():
+            json.dump({key: value}, f, ensure_ascii=False, indent=4)
     retrain_objective(study.best_trial)
