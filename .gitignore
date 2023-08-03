@@ -128,8 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-results/
+results*/
 
 src/logs_hp/
 src/lightning_logs/
-src/logs/
+src/logs*/
