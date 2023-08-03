@@ -215,11 +215,10 @@ if __name__ == '__main__':
     print('  Params: ')
     for key, value in trial.params.items():
         print(f'    {key}: {value}')
-
     fig = optuna.visualization.plot_optimization_history(study)
     fig.show()
     print(study.best_trial)
-    with open('../results/res.json', 'w', encoding='utf-8') as f:
+    with open('../results/hps_nn.json', 'w', encoding='utf-8') as f:
         for key, value in trial.params.items():
-            json.dump({key: value}, f, ensure_ascii=False, indent=4)
+            json.dump({key:value}, f, ensure_ascii=False, indent=4)
     retrain_objective(study.best_trial)

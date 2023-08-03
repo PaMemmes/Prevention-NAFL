@@ -39,14 +39,13 @@ def train(x_train, x_test, y_train, y_test) -> xgb.sklearn.XGBClassifier:
 
     start = time()
     model = clf.fit(x_train, y_train)
-    print("GridSearchCV took %.2f seconds for %d candidate parameter settings." % (
+    print("RandomizedSearchCV took %.2f seconds for %d candidate parameter settings." % (
         time() - start, len(clf.cv_results_["params"])))
     cm, cm_norm, preds = calc_all(model.best_estimator_, x_test, y_test)
     plot_confusion_matrix(cm, name='cm_xg')
 
     print(model.best_params_)
-    with open('../results/res.json', 'w', encoding='utf-8') as f:
+    with open('../results/hps_tree.json', 'w', encoding='utf-8') as f:
         json.dump({'HPs': model.best_params_}, f, ensure_ascii=False, indent=4)
 
-    print('Model best estimate', type(model.best_estimator_))
     return model.best_estimator_
