@@ -10,7 +10,7 @@ from utils.utils import calc_all
 from utils.plots import plot_confusion_matrix
 
 
-def train(x_train, x_test, y_train, y_test) -> xgb.sklearn.XGBClassifier:
+def train(x_train, x_test, y_train, y_test, fib4_preds_test) -> xgb.sklearn.XGBClassifier:
     params = {
         'num_rounds': 10,
         'max_depth': 8,
@@ -35,17 +35,23 @@ def train(x_train, x_test, y_train, y_test) -> xgb.sklearn.XGBClassifier:
     }
 
     bst = xgb.XGBClassifier(**params)
-    clf = RandomizedSearchCV(bst, hyperparameter_grid, n_iter=100)
+    clf = GridSearchCV(bst, hyperparameter_grid)
 
     start = time()
     model = clf.fit(x_train, y_train)
-    print("RandomizedSearchCV took %.2f seconds for %d candidate parameter settings." % (
+    print("GridSearchCV took %.2f seconds for %d candidate parameter settings." % (
         time() - start, len(clf.cv_results_["params"])))
-    cm, cm_norm, preds = calc_all(model.best_estimator_, x_test, y_test)
+    preds = model.best_estimator_.predict(x_test)
+    print('Printing out results for xgboost model')
+    cm, cm_norm = calc_all(preds, y_test, 'xg')
     plot_confusion_matrix(cm, name='cm_xg')
 
     print(model.best_params_)
     with open('../results/hps_tree.json', 'w', encoding='utf-8') as f:
         json.dump({'HPs': model.best_params_}, f, ensure_ascii=False, indent=4)
+
+    print('Printing out results for FIB-4')
+    cm, cm_norm = calc_all(fib4_preds_test, y_test, 'fib4')
+    plot_confusion_matrix(cm, name='cm_fib4')
 
     return model.best_estimator_

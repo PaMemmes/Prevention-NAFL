@@ -7,8 +7,8 @@ def plot_confusion_matrix(cm, name, cmap=plt.cm.Greens):
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title('Confusion matrix ' + name)
     plt.colorbar()
-    plt.xticks(np.arange(4), ['1', '2', '3', '4'], rotation=45)
-    plt.yticks(np.arange(4), ['1', '2', '3', '4'])
+    plt.xticks(np.arange(3), ['1', '2', '3'], rotation=45)
+    plt.yticks(np.arange(3), ['1', '2', '3'])
     plt.tight_layout()
 
     width, height = cm.shape

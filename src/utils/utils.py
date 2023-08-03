@@ -14,16 +14,16 @@ from sklearn.metrics import classification_report
 from sklearn.impute import SimpleImputer
 
 
-def calc_all(model, x_test, y_test) -> list[np.array, np.array, np.array]:
+def calc_all(preds, y_test, name) -> list[np.array, np.array, np.array]:
 
-    preds = model.predict(x_test)
+    
     accuracy = accuracy_score(y_test, preds)
     cm = confusion_matrix(y_test, preds)
     cm_norm = confusion_matrix(y_test, preds, normalize='all')
     cohen_kappa = cohen_kappa_score(y_test, preds)
     precision, recall, fscore, support = score(y_test, preds)
     report = classification_report(y_test, preds)
-    with open('../results/res.json', 'w', encoding='utf-8') as f:
+    with open('../results/res_' + name + '.json', 'w', encoding='utf-8') as f:
         json.dump({'Precision': precision.tolist(), 
         'Recall': recall.tolist(), 'F1': fscore.tolist(), 'Support': support.tolist()
         , 'CohenCappa': cohen_kappa.tolist(), 'Accuracy':accuracy.tolist()}, f, ensure_ascii=False, indent=4)
@@ -34,7 +34,7 @@ def calc_all(model, x_test, y_test) -> list[np.array, np.array, np.array]:
     print('Recall', recall)
     print('fscore:', fscore)
     print('Cohen kappa', cohen_kappa)
-    return cm, cm_norm, preds
+    return cm, cm_norm
 
 
 def calc_all_nn(preds, y_test) -> list[np.array, np.array]:

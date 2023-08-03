@@ -9,7 +9,7 @@ def interpret_tree(model, train, test, df_cols, nn=False) -> None:
     print('Starting interpreting...')
     
     test_df = test
-    inf_inds = torch.randperm(len(test))[:100]
+    inf_inds = torch.randperm(len(test))[:40]
     inf_data = train[inf_inds]
 
     if nn is True:
@@ -46,15 +46,6 @@ def interpret_tree(model, train, test, df_cols, nn=False) -> None:
         feature_names=df_cols,
         show=False)
     shap.save_html('../results/force_plot_2_' + model_name + '.htm', f)
-    plt.close()
-
-    f = shap.force_plot(
-        explainer.expected_value[3],
-        shap_values[3],
-        test,
-        feature_names=df_cols,
-        show=False)
-    shap.save_html('../results/force_plot_3_' + model_name + '.htm', f)
     plt.close()
 
     shap.summary_plot(
