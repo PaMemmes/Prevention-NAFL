@@ -21,6 +21,13 @@ def interpret_tree(model, train, test, df_cols, nn=False) -> None:
         model_name = 'tree'
     shap_values = explainer.shap_values(test_df)
 
+    df_shap = pd.DataFrame(shap_values[0], columns=df_cols)
+    df_shap.to_excel('../results/shaps_0' + model_name + '.xlsx', index=False)
+    df_shap = pd.DataFrame(shap_values[1], columns=df_cols)
+    df_shap.to_excel('../results/shaps_1' + model_name + '.xlsx', index=False)
+    df_shap = pd.DataFrame(shap_values[2], columns=df_cols)
+    df_shap.to_excel('../results/shaps_2' + model_name + '.xlsx', index=False)
+
     f = shap.force_plot(
         explainer.expected_value[0],
         shap_values[0],
