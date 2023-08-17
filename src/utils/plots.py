@@ -20,5 +20,5 @@ def plot_confusion_matrix(cm, name, cmap=plt.cm.Greens):
                          verticalalignment='center')
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
-    plt.savefig('../results/cm.png')
+    plt.savefig('../results/' + name + '.png')
     plt.close('all')

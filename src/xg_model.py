@@ -14,7 +14,6 @@ def train(x_train, x_test, y_train, y_test) -> xgb.sklearn.XGBClassifier:
     params = {
         'num_rounds': 10,
         'max_depth': 8,
-        'max_leaves': 2**8,
         'alpha': 0.9,
         'eta': 0.1,
         'gamma': 0.1,
@@ -31,24 +30,22 @@ def train(x_train, x_test, y_train, y_test) -> xgb.sklearn.XGBClassifier:
 
     hyperparameter_grid = {
         'max_depth': [3, 6, 9],
-        'learning_rate': [0.05, 0.1, 0.20],
-        'max_leaves': [2**4, 2**6, 2**8],
-        'eta': [x for x in np.linspace(0.1, 0.6, 6)],
-        'gamma': [int(x) for x in np.linspace(0, 0.5, 6)]
+        'eta': list(np.linspace(0.1, 0.6, 6)),
+        'gamma': [int(x) for x in np.linspace(0, 10, 10)]
     }
 
     bst = xgb.XGBClassifier(**params)
-    clf = RandomizedSearchCV(bst, hyperparameter_grid, n_iter=80)
+    clf = RandomizedSearchCV(bst, hyperparameter_grid, n_iter=100)
 
     start = time()
     model = clf.fit(x_train, y_train)
-    print("GridSearchCV took %.2f seconds for %d candidate parameter settings." % (
+    print("RandomizedSearchCV took %.2f seconds for %d candidate parameter settings." % (
         time() - start, len(clf.cv_results_["params"])))
     cm, cm_norm, preds = calc_all(model.best_estimator_, x_test, y_test)
-    plot_confusion_matrix(cm, name='cm')
+    plot_confusion_matrix(cm, name='cm_xg')
 
     print(model.best_params_)
-    # with open('../results/results.json', 'w', encoding='utf-8') as f:
-    #     json.dump(metrics, f, ensure_ascii=False, indent=4)
-    print('Model best estimate', type(model.best_estimator_))
+    with open('../results/hps_tree.json', 'w', encoding='utf-8') as f:
+        json.dump({'HPs': model.best_params_}, f, ensure_ascii=False, indent=4)
+
     return model.best_estimator_

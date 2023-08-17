@@ -128,12 +128,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-results/
+results*/
 
-src/lightning_logs/*
-src/logs/*
-src/logs_mice/*
-src/logs_simple/*
-src/logs_hp/*
-src/logs_hp_mice/*
-src/logs_hp_simple/*
+
+src/logs_hp/
+src/lightning_logs/
+src/logs*/
+

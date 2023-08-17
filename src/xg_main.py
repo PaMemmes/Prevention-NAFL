@@ -7,6 +7,6 @@ from interpret import interpret_tree
 
 if __name__ == '__main__':
     df = pd.read_csv('../data/kaggle_cirrhosis.csv')
-    x_train, x_test, y_train, y_test, df_cols = preprocess(df, nn=False)
+    x_train, x_test, y_train, y_test, df_cols = preprocess(df, val=False)
     model = train(x_train, x_test, y_train, y_test)
-    interpret_tree(model, x_train, x_test, df_cols)
+    interpret_tree(model, x_train.to_numpy(), x_test.to_numpy(), df_cols, nn=False)
