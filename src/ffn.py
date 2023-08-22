@@ -43,13 +43,11 @@ def objective(trial) -> float:
             4,
             128,
             log=True) for i in range(n_layers)]
-    loss_weight = torch.Tensor([trial.suggest_float(
-            'weight_w{}'.format(i),
-            1,
-            10) for i in range(4)])
-    
-    model = NeuralNetwork(21, lr, dropout, output_dims, loss_weight)
+
     datamodule = TrainValTestDataModule(batch_size=BATCH_SIZE)
+    class_weights = list(datamodule.class_weights.values())
+    class_weights = torch.Tensor(class_weights)
+    model = NeuralNetwork(21, lr, dropout, output_dims, class_weights)
     hp_logger = TensorBoardLogger(save_dir='logs_hp', default_hp_metric=False)
     trainer = pl.Trainer(
         logger=hp_logger,
@@ -75,13 +73,13 @@ def retrain_objective(trial) -> float:
             4,
             128,
             log=True) for i in range(n_layers)]
-    loss_weight = torch.Tensor([trial.suggest_float(
-            'weight_w{}'.format(i),
-            1,
-            10) for i in range(4)])
-
-    model = NeuralNetwork(21, lr, dropout, output_dims, loss_weight)
+    
     datamodule = TrainTestDataModule(batch_size=BATCH_SIZE)
+    class_weights = list(datamodule.class_weights.values())
+
+    class_weights = torch.Tensor(class_weights)
+    model = NeuralNetwork(21, lr, dropout, output_dims, class_weights)
+    
     retrain_logger = TensorBoardLogger(save_dir='logs')
     trainer = pl.Trainer(
         logger=retrain_logger,

@@ -5,6 +5,8 @@ from torch.utils.data import Dataset, DataLoader
 import torch
 import pandas as pd
 import pytorch_lightning as pl
+import numpy as np
+from sklearn.utils import class_weight
 
 from preprocess import preprocess
 
@@ -24,12 +26,18 @@ class TrainValTestDataModule(pl.LightningModule):
     def __init__(self, batch_size) -> None:
         super().__init__()
         self.batch_size = batch_size
+        df = pd.read_csv('../data/kaggle_cirrhosis.csv')
+        x_train, x_val, x_test, y_train, y_val, y_test, df_cols = preprocess(
+            df, val=True)
+        class_weights = class_weight.compute_class_weight(class_weight="balanced",
+                                        classes = np.unique(y_train),
+                                        y = y_train.values.reshape(-1))
+        self.class_weights = dict(zip(np.unique(y_train), class_weights))
 
     def setup(self, stage: Optional[str] = None) -> None:
         df = pd.read_csv('../data/kaggle_cirrhosis.csv')
         x_train, x_val, x_test, y_train, y_val, y_test, df_cols = preprocess(
             df, val=True)
-        
         self.df_cols = df_cols
         self.train_set = KaggleDataSet(x_train, y_train)
         self.val_set = KaggleDataSet(x_val, y_val)
@@ -57,6 +65,13 @@ class TrainTestDataModule(pl.LightningModule):
     def __init__(self, batch_size) -> None:
         super().__init__()
         self.batch_size = batch_size
+        df = pd.read_csv('../data/kaggle_cirrhosis.csv')
+        x_train, x_val, x_test, y_train, y_val, y_test, df_cols = preprocess(
+            df, val=True)
+        class_weights = class_weight.compute_class_weight(class_weight="balanced",
+                                        classes = np.unique(y_train),
+                                        y = y_train.values.reshape(-1))
+        self.class_weights = dict(zip(np.unique(y_train), class_weights))
 
     def setup(self, stage: Optional[str] = None) -> None:
         df = pd.read_csv('../data/kaggle_cirrhosis.csv')
